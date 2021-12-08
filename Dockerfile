@@ -1,5 +1,5 @@
 # https://hub.docker.com/_/python
-FROM python:3.10
+FROM python:3.8
 
 ENV PYTHONUNBUFFERED True
 
@@ -9,6 +9,10 @@ ENV PORT 5000
 
 WORKDIR $APP_HOME
 COPY . ./
+
+# install rust
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Install production dependencies.
 RUN pip install --no-cache-dir -r requirements.txt
