@@ -2,5 +2,5 @@ Flask==2.0.2
 gunicorn==20.1.0
 transformers==4.12.5
 Pillow==8.4.0
-torch==1.10.0+cpu
-torchvision==0.11.1+cpu
+torch==1.10.0
+torchvision==0.11.1
