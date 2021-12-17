@@ -9,12 +9,14 @@ app = Flask(__name__)
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
+@torch.no_grad()
 @app.route("/")
 def hello_world():
     name = os.environ.get("NAME", "World")
     print("hello world")
     return "Hello {}!".format(name)
 
+@torch.no_grad()
 @app.route('/text')
 def text():
     text = request.args.get('text')
