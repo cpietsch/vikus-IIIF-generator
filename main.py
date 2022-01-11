@@ -27,9 +27,9 @@ def get_hit_count():
 @app.route("/")
 def hello_world():
     name = os.environ.get("NAME", "World")
-    count = get_hit_count()
+    # count = get_hit_count()
     print("hello world")
-    return 'Hello World! I have been seen {} times.\n'.format(count)
+    return 'Hello World! I have been seen {} times.\n' #.format(count)
 
 #@torch.no_grad()
 @app.route('/text')

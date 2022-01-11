@@ -25,4 +25,4 @@ EXPOSE $PORT
 RUN curl -fsSL https://deb.nodesource.com/setup_17.x | bash -
 RUN apt-get install -y nodejs
 
-#CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app
+CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app
