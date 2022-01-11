@@ -9,6 +9,8 @@ app = Flask(__name__)
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
+print("loading")
+
 @torch.no_grad()
 @app.route("/")
 def hello_world():

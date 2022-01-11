@@ -10,7 +10,7 @@ ENV PORT 5000
 WORKDIR $APP_HOME
 COPY . ./
 
-RUN apk add --no-cache gcc musl-dev linux-headers
+#RUN apk add --no-cache gcc musl-dev linux-headers
 
 # install rust
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
