@@ -3,22 +3,35 @@ from PIL import Image
 import requests
 from flask import Flask, request, jsonify
 from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer
+import redis
 
 app = Flask(__name__)
 
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+cache = redis.Redis(host='redis', port=6379)
 
-print("loading")
+def get_hit_count():
+    retries = 5
+    while True:
+        try:
+            return cache.incr('hits')
+        except redis.exceptions.ConnectionError as exc:
+            if retries == 0:
+                raise exc
+            retries -= 1
+            time.sleep(0.5)
 
-@torch.no_grad()
+
+#@torch.no_grad()
 @app.route("/")
 def hello_world():
     name = os.environ.get("NAME", "World")
+    count = get_hit_count()
     print("hello world")
-    return "Hello {}!".format(name)
+    return 'Hello World! I have been seen {} times.\n'.format(count)
 
-@torch.no_grad()
+#@torch.no_grad()
 @app.route('/text')
 def text():
     text = request.args.get('text')
