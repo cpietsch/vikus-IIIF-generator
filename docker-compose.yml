@@ -8,5 +8,6 @@ services:
       dockerfile: ./Dockerfile
     ports:
       - 5000:5000
+    command: gunicorn --bind 5000 --workers 1 --threads 8 --timeout 0 main:app
   redis:
     image: "redis:alpine"
