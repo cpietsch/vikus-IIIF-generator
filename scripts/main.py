@@ -36,7 +36,8 @@ def hello_world():
     name = os.environ.get("NAME", "World")
     count = get_hit_count()
     print("hello world")
-    return 'Hello World! I have been seen {} times.\n'.format(count)
+    return 'Hello Worlds! I have been seen {} times.\n'.format(count)
+
 
 
 @app.route("/cache")
