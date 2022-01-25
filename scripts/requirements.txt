@@ -10,3 +10,4 @@ iiif_downloader
 rich
 aiohttp
 asyncio
+aiofiles
