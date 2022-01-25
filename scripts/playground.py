@@ -9,8 +9,10 @@ from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer
 import redis
 from iiif_downloader import Manifest as IIIFManifest
 import asyncio
+import aiohttp
 import random
 import time
+
 
 from rich import pretty
 pretty.install()
@@ -19,32 +21,37 @@ from rich.console import Console
 from rich.tree import Tree
 from rich import print
 
-cache = redis.Redis(host='redis', port=6379)
-
 debug = True
+
+cache = redis.Redis(host='redis', port=6379)
+semaphore = asyncio.Semaphore(debug and 10 or -1) 
+
+# clear redis cache
+def clearCache():
+    cache.flushdb()
+
+#clearCache()
 
 logging.basicConfig(level=logging.DEBUG, handlers=[RichHandler()])
 logger = logging.getLogger('rich')
 
 url = "https://iiif.wellcomecollection.org/presentation/v3/collections/genres"
 
-
-def getJson(url):
+async def getJson(url):
     retries = 5
-    while True:
-        try:
-            response = requests.get(url)
-            if response.status_code == 200:
-                return response.text
-            else:
-                return None
-        except Exception as e:
-            if retries == 0:
-                return None
-            retries -= 1
-            time.sleep(0.5)
+    async with aiohttp.ClientSession() as session:
+        for i in range(retries):
+            try:
+                async with session.get(url) as response:
+                    return await response.text()
+            except Exception as e:
+                logger.error(e)
+                logger.error("retry {} {url}".format(i))
+                await asyncio.sleep(1)
+        return None
 
-def getJsonFromCache(url):
+
+async def getJsonFromCache(url):
     logger.info("get cache for {}".format(url))
     if cache.exists(url):
         logger.info("cache hit")
@@ -52,7 +59,7 @@ def getJsonFromCache(url):
         return json.loads(cached)
     else:
         logger.info("cache miss")
-        data = getJson(url)
+        data = await getJson(url)
         if data is not None:
             logger.info("cache set")
             cache.set(url, data)
@@ -105,7 +112,7 @@ class Manifest:
     async def load(self):
         if self.url:
             logger.info("get manifest from url {}".format(self.url))
-            self.data = getJsonFromCache(self.url)
+            self.data = await getJsonFromCache(self.url)
             if self.id != self.data.get('id'):
                 logger.warning("url {} does not match id {}".format(self.url, self.data.get('id')))
             self.id = self.data.get('id')

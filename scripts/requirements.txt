@@ -8,3 +8,5 @@ redis
 flask-cors
 iiif_downloader
 rich
+aiohttp
+asyncio
