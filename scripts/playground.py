@@ -39,20 +39,9 @@ url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths
 
 
 async def main():
-    #clearCache()
-    # await manifestEntry.load()
-    # await manifestEntry.loadChildren()
-    # await manifestEntry.loadDeep()
-    # console.log(manifestEntry.data)
-    # print(manifestEntry.tree)
 
-    logger.info("start")
-    try:
-        print("start")
-        crawler = Crawler(url=url, cache=cache, logger=logger)
-        manifest = await crawler.run()
-    except Exception as e:
-        logger.error(traceback.format_exc())
+    crawler = Crawler(url=url, cache=cache, logger=logger)
+    manifest = await crawler.run()
 
     manifests = manifest.getFlatList(manifest)
     thumbnails = [ manifest.getThumbnail() for manifest in manifests ]
