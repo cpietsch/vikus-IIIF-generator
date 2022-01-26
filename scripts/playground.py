@@ -1,5 +1,6 @@
 from distutils.archive_util import make_archive
 from distutils.log import debug
+from multiprocessing.dummy import Array
 import os
 from PIL import Image
 import requests, json, os, time, logging, sys
@@ -36,7 +37,8 @@ logging.basicConfig(level=logging.WARNING, handlers=[RichHandler()])
 logger = logging.getLogger('rich')
 
 # url = "https://iiif.wellcomecollection.org/presentation/v3/collections/genres"
-url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
+# url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
+url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths_and_legends"
 
 async def getJson(url):
     retries = 5
@@ -74,7 +76,6 @@ def getLabel(data):
     label = labels[0]
     return label
 
-default_verbose = True
 
 class Manifest:
     def __init__(self, *args, **kwargs):
@@ -88,7 +89,8 @@ class Manifest:
         self.parent = kwargs.get('parent', None)
         self.label = None
         self.tree =  kwargs.get('tree', None)
-        self.path = self.parent and self.id.replace(self.parent.id, '') or self.id
+        self.type = None
+        #self.path = self.parent and self.id.replace(self.parent.id, '') or self.id
 
     async def load(self):
         if self.url:
@@ -107,18 +109,46 @@ class Manifest:
                 self.tree = self.tree.add(f"{emoji} [link {self.id}]{self.id}")
 
             return self
+    
+    def add(self, child):
+        self.children.append(child)
 
-    async def loadChildren(self):
-        if self.data.get('items', False) and not self.loaded:
-            for item in self.data.get('items')[:self.maxload]:
-                child = Manifest(url=item.get('id'), depth=self.depth+1, parent = self, tree=self.tree)
-                await child.load()
-                self.children.append(child)
-        self.loaded = True
+    
+    def getThumbnail(self):
+        thumbnails = self.data.get('thumbnail')
+        if isinstance(thumbnails, list):
+            return thumbnails[0].get('id')
+        else:
+            return None
 
-    async def loadDeep(self):
-        for item in self.children:
-            await item.loadChildren()
+    async def downloadThumbnail(self):
+        if url:
+            logger.info("download thumbnail {}".format(url))
+            response = requests.get(url)
+            if response.status_code == 200:
+                return response.content
+            else:
+                logger.warning("failed to download thumbnail {}".format(url))
+                return None
+        else:
+            logger.warning("no thumbnail url")
+            return None
+    
+    def getChildren(self):
+        return self.children
+
+
+    # async def loadChildren(self):
+    #     if self.data.get('items', False) and not self.loaded:
+    #         for item in self.data.get('items')[:self.maxload]:
+    #             child = Manifest(url=item.get('id'), depth=self.depth+1, parent = self, tree=self.tree)
+    #             await child.load()
+    #             self.children.append(child)
+    #     self.loaded = True
+
+    # async def loadDeep(self):
+    #     for item in self.children:
+    #         await item.loadChildren()
 
 
 async def worker(name, queue):
@@ -126,14 +156,18 @@ async def worker(name, queue):
         # Get a "work item" out of the queue.
         prio, manifest = await queue.get()
 
-        # Sleep for the "sleep_for" seconds.
         await manifest.load()
 
         if manifest.data.get('items', False):
             for item in manifest.data.get('items'):
                 # print("{} added {}".format(name, item.get('id')))
-                child = Manifest(url=item.get('id'), depth=manifest.depth+1, tree=manifest.tree, parent = manifest)
-                manifest.children.append(child)
+                child = Manifest(
+                    url=item.get('id'),
+                    depth=manifest.depth+1,
+                    tree=manifest.tree,
+                    parent = manifest
+                )
+                manifest.add(child)
                 # print(item.get('type'))
                 if item.get('type') == 'Collection' or item.get('type') == 'Manifest':
                     queue.put_nowait((prio + 1 + random.uniform(0, 1), child))
@@ -143,16 +177,29 @@ async def worker(name, queue):
 
         logger.info(f'prio: {prio} {manifest.label} done with {len(manifest.children)} children, {queue.qsize()} items left')
 
+def getFlatList(manifest):
+    list = []
+    if manifest.type == 'Manifest':
+        list.append(manifest)
 
-async def main():
-    # Create a queue that we will use to store our "workload".
+    for item in manifest.children:
+        if item.type == 'Manifest':
+            list.extend(getFlatList(item))
+
+    return list
+
+
+async def loadManifests(url, workers=1):
+    logger.info("load manifests from {}".format(url))
+     # Create a queue that we will use to store our "workload".
     queue = asyncio.PriorityQueue()
 
-    manifestEntry = Manifest(url=url, debug=True)
-    queue.put_nowait((0, manifestEntry))
+    manifest = Manifest(url=url, debug=True)
+
+    queue.put_nowait((0, manifest))
 
     tasks = []
-    for i in range(1):
+    for i in range(workers):
         task = asyncio.create_task(worker(f'worker-{i}', queue))
         tasks.append(task)
 
@@ -163,39 +210,27 @@ async def main():
         task.cancel()
     # Wait until all worker tasks are cancelled.
     await asyncio.gather(*tasks, return_exceptions=True)
+    logger.info("load manifests done")
+    return manifest
+
+async def main():
+   
 
     # await manifestEntry.load()
     # await manifestEntry.loadChildren()
     # await manifestEntry.loadDeep()
     # console.log(manifestEntry.data)
-    print(manifestEntry.tree)
+    # print(manifestEntry.tree)
 
+    manifest = await loadManifests(url);
+
+    manifests = getFlatList(manifest)
+    thumbnails = [ manifest.getThumbnail() for manifest in manifests ]
+
+    print(manifest.tree)
+    print(thumbnails)
     print('Done')
 
 
 asyncio.run(main())
 
-# async def crawl(manifest):
-#     print("crawl {}".format(manifest.id))
-#     await manifest.load()
-    
-#     logger.info(manifest.data, log_locals=True)
-#     # await manifest.loadChildren()
-
-#     # if manifest.data.get('items', False):
-#     #         for item in manifest.data.get('items'):
-#     #             print("added {}".format(item.get('id')))
-#     #             child = Manifest(url=item.get('id'), depth=manifest.depth+1)
-#     #             manifest.children.append(child)
-#     #             if(manifest.depth < 2):
-#     #                 await crawl(child)
-#     #             # await asyncio.ensure_future(crawl(child))
-
-#     return manifest
-
-
-# m = Manifest(url=url)
-# m.loatItems()
-# #m.loadDeep()
-
-# IIIFManifest(url='https://iiif.harvardartmuseums.org/manifests/object/299843').save_images()
