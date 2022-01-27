@@ -40,7 +40,7 @@ def hello_world():
 
 
 
-@app.route("/cache")
+@app.route("/cache") 
 def cache():
     url = request.args.get('url')
     app.logger.info("get cache for {}".format(url))
