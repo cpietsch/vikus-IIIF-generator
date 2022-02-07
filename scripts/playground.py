@@ -1,82 +1,79 @@
-import os
+
 from PIL import Image
 import requests, json, os, time, logging, sys
 # from flask import Flask, request, jsonify
 # from flask_cors import CORS
 # from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer
-import redis
 import asyncio
 import aiohttp
 import random
-import time
 import traceback
 import hashlib
 
 from rich import pretty
 from rich.logging import RichHandler
+# from rich.console import Console
+# from rich.theme import Theme
 from rich import print
+# console = Console(theme=Theme({"logging.level": "green"}))
 
-from crawler import Crawler
+from crawler import ManifestCrawler, Cache, ImageCrawler
+
+from helpers import *
 
 pretty.install()
 
 debug = True
+loggingLevel = logging.DEBUG if debug else logging.INFO
 
-cache = redis.Redis(host='redis', port=6379)
-
-# clear redis cache
-# cache.flushdb()
-
-logging.basicConfig(level=logging.WARN, handlers=[RichHandler()])
+logging.basicConfig(
+    level=loggingLevel,
+    # format="%(message)s",
+    datefmt="%X",
+    handlers=[RichHandler(show_time=True, rich_tracebacks=True, tracebacks_show_locals=True)]
+)
 logger = logging.getLogger('rich')
 
-# url = "https://iiif.wellcomecollection.org/presentation/v3/collections/genres"
-# url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
+#url = "https://iiif.wellcomecollection.org/presentation/v3/collections/genres"
+#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
 url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths_and_legends"
 
-def createFolder(directory):
-    try:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        # return absolute path
-        return os.path.abspath(directory)
-    except OSError:
-        print ('Error: Creating directory. ' +  directory)
 
-
-class ImageDownloader:
-    async def download(self, url, path):
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                if response.status == 200:
-                    logger.info("downloading {}".format(url))
-                    data = await response.read()
-                    filename = hashlib.md5(data).hexdigest() + ".jpg"
-                    filepath = os.path.join(path, filename)
-                    with open(filepath, 'wb') as f:
-                        f.write(data)
-                    return filepath
-                else:
-                    return None
-
+@duration
 async def main():
 
     dataPath = createFolder("../data/images")
     print(dataPath)
 
-    crawler = Crawler(url=url, cache=cache, logger=logger, workers=1)
-    manifest = await crawler.getManifest()
+    cache = Cache(
+        #logger=logger
+    )
+    cache.clear()
+    
+    imageCrawler = ImageCrawler(workers=1, path=dataPath)
+    manifestCrawler = ManifestCrawler(
+        url=url, 
+        cache=cache,
+        #logger=logger,
+        workers=2,
+        callback=imageCrawler.addFromManifest
+    )
+    # manifest = await manifestCrawler.runManifestWorkers()
+    manifests, images = await asyncio.gather(
+        manifestCrawler.runManifestWorkers(),
+        imageCrawler.run()
+    )
+    print(images)
+    # manifestsFlat = manifest.getFlatList(manifest)
+    # thumbnails = [ manifest.getThumbnail() for manifest in manifestsFlat ]
 
-    manifestsFlat = manifest.getFlatList(manifest)
-    thumbnails = [ manifest.getThumbnail() for manifest in manifestsFlat ]
+    # downloader = ImageDownloader()
 
-    downloader = ImageDownloader()
+    # for thumbnail in thumbnails:
+    #     await downloader.download(thumbnail, dataPath)
 
-    for thumbnail in thumbnails:
-        await downloader.download(thumbnail, dataPath)
-
-    print(manifest.tree)
-    print(thumbnails)
+    # print(manifest.tree)
+    # print(thumbnails)
     print('Done')
 
 
