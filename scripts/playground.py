@@ -1,5 +1,5 @@
 
-from PIL import Image
+# from PIL import Image
 import requests, json, os, time, logging, sys
 # from flask import Flask, request, jsonify
 # from flask_cors import CORS
@@ -17,8 +17,8 @@ from rich.logging import RichHandler
 from rich import print
 # console = Console(theme=Theme({"logging.level": "green"}))
 
-from crawler import ManifestCrawler, Cache, ImageCrawler
-
+from crawler import ManifestCrawler, ImageCrawler
+from cache import Cache
 from helpers import *
 
 pretty.install()
@@ -48,29 +48,24 @@ async def main():
     cache = Cache(
         #logger=logger
     )
-    cache.clear()
+    # cache.clear()
     
-    imageCrawler = ImageCrawler(workers=1, path=dataPath)
     manifestCrawler = ManifestCrawler(
         url=url, 
         cache=cache,
         #logger=logger,
         workers=2,
-        callback=imageCrawler.addFromManifest
+        #callback=imageCrawler.addFromManifest
     )
-    # manifest = await manifestCrawler.runManifestWorkers()
-    manifests, images = await asyncio.gather(
-        manifestCrawler.runManifestWorkers(),
-        imageCrawler.run()
-    )
+    manifest = await manifestCrawler.runManifestWorkers()
+    imageCrawler = ImageCrawler(workers=2, path=dataPath)
+    for manifest in manifest.getFlatList(manifest):
+        imageCrawler.addFromManifest(manifest)
+
+    images = await imageCrawler.runImageWorkers()
     print(images)
-    # manifestsFlat = manifest.getFlatList(manifest)
     # thumbnails = [ manifest.getThumbnail() for manifest in manifestsFlat ]
 
-    # downloader = ImageDownloader()
-
-    # for thumbnail in thumbnails:
-    #     await downloader.download(thumbnail, dataPath)
 
     # print(manifest.tree)
     # print(thumbnails)
