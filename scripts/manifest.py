@@ -18,6 +18,7 @@ class Manifest:
         self.tree =  kwargs.get('tree', self.parent and self.parent.tree or None)
         self.type = None
         self.logger = kwargs.get('logger', logging.getLogger('rich'))
+        self.shortId = self.id.split('/')[-1]
         #self.path = self.parent and self.id.replace(self.parent.id, '') or self.id
 
     def load(self, data=None):
@@ -27,6 +28,7 @@ class Manifest:
             if self.id != self.data.get('id'):
                 self.logger.warning("url {} does not match id {}".format(self.url, self.data.get('id')))
             self.id = self.data.get('id')
+            
             self.label = self.getLabel(self.data)
             self.type = self.data.get('type')
 

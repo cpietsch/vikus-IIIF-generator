@@ -9,8 +9,6 @@ import logging
 from manifest import Manifest
 class ManifestCrawler:
     def __init__(self,*args,**kwargs):
-        self.url = kwargs.get('url', None)
-        self.urls = kwargs.get('url', None)
         self.client = kwargs.get('client')
         self.limitRecursion = kwargs.get('limitRecursion', False)
         self.cache = kwargs.get('cache', None)
@@ -21,7 +19,6 @@ class ManifestCrawler:
         self.callback = kwargs.get('callback', None)
 
         self.logger.debug("init crawler")
-        self.logger.debug("url: {}".format(self.url))
 
     async def manifestWorker(self, name, queue):
         self.logger.debug("worker {} started".format(name))
@@ -57,12 +54,10 @@ class ManifestCrawler:
                 self.logger.debug(f'{name}: {prio} {manifest.label} done with {len(manifest.children)} children, {queue.qsize()} items left')
 
 
-    async def runManifestWorkers(self):
-        self.logger.debug("load manifests from {}".format(self.url))
+    async def crawl(self, manifest):
+        self.logger.debug("load manifests from {}".format(manifest.id))
         # Create a queue that we will use to store our "workload".
         queue = asyncio.PriorityQueue()
-
-        manifest = Manifest(url=self.url)
 
         queue.put_nowait((0, manifest))
 

@@ -20,10 +20,11 @@ from rich import print
 from crawler import ManifestCrawler, ImageCrawler
 from cache import Cache
 from helpers import *
+from manifest import Manifest
 
 pretty.install()
 
-debug = True
+debug = False
 loggingLevel = logging.DEBUG if debug else logging.INFO
 
 logging.basicConfig(
@@ -42,29 +43,28 @@ url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths
 @duration
 async def main():
 
-    dataPath = createFolder("../data/images")
-    print(dataPath)
-
-    cache = Cache(
-        #logger=logger
-    )
+    cache = Cache()
     # cache.clear()
     
+    manifest = Manifest(url=url)
+    dataPath = createFolder("../data/{}".format(manifest.shortId))
+    thumbPath = createFolder("{}/images/thumbs".format(dataPath))
+    
+    print(thumbPath)
+    
     manifestCrawler = ManifestCrawler(
-        url=url, 
         cache=cache,
-        #logger=logger,
         workers=2,
         #callback=imageCrawler.addFromManifest
     )
-    manifest = await manifestCrawler.runManifestWorkers()
-    imageCrawler = ImageCrawler(workers=2, path=dataPath)
+    manifest = await manifestCrawler.crawl(manifest)
+    
+    imageCrawler = ImageCrawler(workers=2, path=thumbPath)
     for manifest in manifest.getFlatList(manifest):
         imageCrawler.addFromManifest(manifest)
 
     images = await imageCrawler.runImageWorkers()
     print(images)
-    # thumbnails = [ manifest.getThumbnail() for manifest in manifestsFlat ]
 
 
     # print(manifest.tree)
