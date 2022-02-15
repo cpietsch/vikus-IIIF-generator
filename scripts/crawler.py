@@ -25,7 +25,12 @@ class ManifestCrawler:
         async with aiohttp.ClientSession() as session:
             while True:
                 # Get a "work item" out of the queue.
-                prio, manifest = await queue.get()
+                try:
+                    prio, manifest = await queue.get()
+                except asyncio.CancelledError:
+                    self.logger.debug("worker {} cancelled".format(name))
+                    return
+
                 data = await self.cache.getJson(manifest.url, session)
                 manifest.load(data)
 
@@ -59,18 +64,22 @@ class ManifestCrawler:
         # Create a queue that we will use to store our "workload".
         queue = asyncio.PriorityQueue()
 
-        queue.put_nowait((0, manifest))
+        
 
         tasks = []
         for i in range(self.workers):
             task = asyncio.create_task(self.manifestWorker(f'worker-{i}', queue))
             tasks.append(task)
 
+        queue.put_nowait((0, manifest))
+
         await queue.join()
     
         # Cancel our worker tasks.
         for task in tasks:
+            await asyncio.sleep(0)
             task.cancel()
+            await task
 
         # Wait until all worker tasks are cancelled.
         try:
@@ -96,25 +105,35 @@ class ImageCrawler:
         self.logger.debug("init crawler")
         self.tasks = []
         self.done = []
+        self.overwrite = kwargs.get('overwrite', False)
+
         
-    
     def addFromManifest(self, manifest):
         thumbnailUrl = manifest.getThumbnail()
+        id = manifest.getId()
         self.logger.debug("adding {}".format(thumbnailUrl))
         if thumbnailUrl is not None:
-            self.queue.put_nowait(thumbnailUrl)
+            self.queue.put_nowait((id,thumbnailUrl))
+    
+    def makeFilename(self, id):
+        filename = id + ".jpg"
+        filepath = os.path.join(self.path, filename)
+        return filepath
 
-    async def download(self, url, session):
+    async def download(self, url, id, session):
+        self.logger.debug("download {}".format(url))
+
+        filePath = self.makeFilename(id)
+        if os.path.exists(filePath) and not self.overwrite:
+            return filePath
+        
         async with session.get(url) as response:
             if response.status == 200:
                 self.logger.debug("downloading {}".format(url))
                 data = await response.read()
-                urlHash = hashlib.md5(url.encode('utf-8')).hexdigest()
-                filename = urlHash + ".jpg"
-                filepath = os.path.join(self.path, filename)
-                with open(filepath, 'wb') as f:
+                with open(filePath, 'wb') as f:
                     f.write(data)
-                return data, filepath
+                return filePath
             else:
                 return None
 
@@ -122,14 +141,19 @@ class ImageCrawler:
         self.logger.debug("imageworker {} started".format(name))
         async with aiohttp.ClientSession() as session:
             while True:
-                url = await self.queue.get()
+                try:
+                    (id, url) = await self.queue.get()
+                except asyncio.CancelledError:
+                    self.logger.debug("imageworker {} cancelled".format(name))
+                    return
+
                 self.logger.debug("{} downloading {}".format(name, url))
-                data, filepath = await self.download(url, session)
-                if data is not None:
+                filepath = await self.download(url, id, session)
+                if filepath is not None:
                     self.logger.debug("{} downloaded {}".format(name, url))
-                    self.done.append(filepath)
+                    self.done.append((id, filepath))
                     if self.callback != None:
-                        self.callback(url, filepath)
+                        self.callback(id, filepath)
                 else:
                     self.logger.debug("{} failed to download {}".format(name, url))
                 self.queue.task_done()
@@ -143,13 +167,14 @@ class ImageCrawler:
         for i in range(self.workers):
             task = asyncio.create_task(self.imageWorker(f'worker-{i}'))
             self.tasks.append(task)
-            print("task {}".format(task))
         
         await self.queue.join()
 
         # Cancel our worker tasks.
         for task in self.tasks:
+            await asyncio.sleep(0)
             task.cancel()
+            await task
 
         # Wait until all worker tasks are cancelled.
         await asyncio.gather(*self.tasks, return_exceptions=True)

@@ -10,6 +10,8 @@ import random
 import traceback
 import hashlib
 
+import numpy as np
+
 from rich import pretty
 from rich.logging import RichHandler
 # from rich.console import Console
@@ -21,6 +23,9 @@ from crawler import ManifestCrawler, ImageCrawler
 from cache import Cache
 from helpers import *
 from manifest import Manifest
+from features import FeatureExtractor
+from umaper import Umaper
+
 
 pretty.install()
 
@@ -44,7 +49,7 @@ url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths
 async def main():
 
     cache = Cache()
-    # cache.clear()
+    #cache.clear()
     
     manifest = Manifest(url=url)
     dataPath = createFolder("../data/{}".format(manifest.shortId))
@@ -66,6 +71,26 @@ async def main():
     images = await imageCrawler.runImageWorkers()
     print(images)
 
+    featureExtractor = FeatureExtractor("openai/clip-vit-base-patch32", "cpu")
+    featureExtractor.load_model()
+
+    # features = []
+    # for image in images:
+    #     feature = featureExtractor.extract_features(image)
+    #     # features = np.append(features, feature)
+    #     features.append(feature)
+    #     # print(features)
+
+    imagePaths = [path for (id, path) in images]
+    features = featureExtractor.batch_extract_features(imagePaths)
+
+    # features = np.array(features)
+    # print(features)
+
+    umaper = Umaper(n_neighbors=10, min_dist=0.1)
+    embedding = umaper.fit_transform(features)
+
+    print(embedding)
 
     # print(manifest.tree)
     # print(thumbnails)

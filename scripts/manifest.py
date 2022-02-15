@@ -2,6 +2,7 @@ import logging
 import asyncio
 import random
 import time
+import hashlib
 
 from rich.tree import Tree
 
@@ -19,7 +20,11 @@ class Manifest:
         self.type = None
         self.logger = kwargs.get('logger', logging.getLogger('rich'))
         self.shortId = self.id.split('/')[-1]
+        self.hashId = self.hashId = hashlib.md5(self.id.encode('utf-8')).hexdigest()
         #self.path = self.parent and self.id.replace(self.parent.id, '') or self.id
+        
+    def getId(self):
+        return self.hashId
 
     def load(self, data=None):
         if data:
