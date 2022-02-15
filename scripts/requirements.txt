@@ -11,3 +11,4 @@ aiohttp
 asyncio
 aiofiles
 umap-learn
+pandas

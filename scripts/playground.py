@@ -9,6 +9,8 @@ import aiohttp
 import random
 import traceback
 import hashlib
+import pandas as pd
+
 
 import numpy as np
 
@@ -87,10 +89,16 @@ async def main():
     # features = np.array(features)
     # print(features)
 
-    umaper = Umaper(n_neighbors=10, min_dist=0.1)
+    umaper = Umaper(n_neighbors=3, min_dist=0.1, logger=logger)
     embedding = umaper.fit_transform(features)
+    
+    # print(embedding)
 
-    print(embedding)
+    dataframe = pd.DataFrame(data=embedding, columns=['x', 'y'])
+    dataframe['id'] = [id for (id, path) in images]
+    dataframe.set_index('id')
+
+    dataframe.to_csv("{}/embedding.csv".format(dataPath), index=False)
 
     # print(manifest.tree)
     # print(thumbnails)

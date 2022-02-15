@@ -35,7 +35,7 @@ class FeatureExtractor:
     
     @torch.no_grad()
     def batch_extract_features(self, image_paths):
-        print("Extracting features of {}".format(image_paths))
+        print("Extracting features of {}".format(len(image_paths)))
         images = [self.prepareImage(image_path) for image_path in image_paths]
         inputs = self.processor(images=images, return_tensors="pt", padding=True)
         outputs = self.model.get_image_features(**inputs)
