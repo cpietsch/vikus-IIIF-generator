@@ -14,9 +14,12 @@ class Cache:
     def clear(self):
         self.redis.flushdb()
 
-    async def getJsonFromUrl(self,url, session, retries = 5):
+    async def getJsonFromUrl(self,url, session = None, retries = 5):
         for i in range(retries):
             try:
+                if session is None:
+                    return requests.get(url).text
+                
                 async with session.get(url) as response:
                     return await response.text()
             except Exception as e:
@@ -26,7 +29,7 @@ class Cache:
         return None
 
 
-    async def getJson(self, url, session):
+    async def getJson(self, url, session = None, retries = 5):
         self.logger.debug("get cache for {}".format(url))
         if self.redis.exists(url):
             self.logger.debug("cache hit")
@@ -34,7 +37,7 @@ class Cache:
             return json.loads(cached)
         else:
             self.logger.debug("cache miss")
-            data = await self.getJsonFromUrl(url, session)
+            data = await self.getJsonFromUrl(url, session, retries)
             if data is not None:
                 self.logger.debug("cache set")
                 self.redis.set(url, data)

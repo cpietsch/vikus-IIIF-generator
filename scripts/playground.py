@@ -11,7 +11,6 @@ import traceback
 import hashlib
 import pandas as pd
 
-
 import numpy as np
 
 from rich import pretty
@@ -21,17 +20,18 @@ from rich.logging import RichHandler
 from rich import print
 # console = Console(theme=Theme({"logging.level": "green"}))
 
-from crawler import ManifestCrawler, ImageCrawler
+from manifestCrawler import ManifestCrawler
+from imageCrawler import ImageCrawler
 from cache import Cache
 from helpers import *
 from manifest import Manifest
 from features import FeatureExtractor
-from umaper import Umaper
+# from umaper import Umaper
 
 
 pretty.install()
 
-debug = False
+debug = True
 loggingLevel = logging.DEBUG if debug else logging.INFO
 
 logging.basicConfig(
@@ -89,7 +89,7 @@ async def main():
     # features = np.array(features)
     # print(features)
 
-    umaper = Umaper(n_neighbors=3, min_dist=0.1, logger=logger)
+    umaper = Umaper(n_neighbors=3, min_dist=0.1)
     embedding = umaper.fit_transform(features)
     
     # print(embedding)
@@ -104,7 +104,43 @@ async def main():
     # print(thumbnails)
     print('Done')
 
+@duration
+async def collect():
+
+    cache = Cache()
+    #cache.clear()
+    
+    manifest = Manifest(url=url)
+    dataPath = createFolder("../data/{}".format(manifest.shortId))
+    thumbPath = createFolder("{}/images/thumbs".format(dataPath))
+    
+    # print(thumbPath)
+    
+    manifestCrawler = ManifestCrawler(
+        cache=cache,
+        workers=2,
+        #callback=imageCrawler.addFromManifest
+    )
+    manifest = await manifestCrawler.crawl(manifest)
+
+    list = manifest.getFlatList(manifest, type='Canvas')
+
+    print(len(list))
+    # for manifest in list:
+    #     print(manifest)
+        
+    
+    # thumbs = []
+    # for manifest in manifest.getFlatList(manifest):
+    #     t = manifest.getThumbnailUrls()
+    #     print(manifest)
+    #     thumbs.append(t)
+
+    # print(len(thumbs))
+
+
+    print('Done')
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(collect())
 

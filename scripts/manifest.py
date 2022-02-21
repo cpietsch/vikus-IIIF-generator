@@ -5,6 +5,8 @@ import time
 import hashlib
 
 from rich.tree import Tree
+from cache import Cache
+
 
 class Manifest:
     def __init__(self, *args, **kwargs):
@@ -22,13 +24,21 @@ class Manifest:
         self.shortId = self.id.split('/')[-1]
         self.hashId = self.hashId = hashlib.md5(self.id.encode('utf-8')).hexdigest()
         #self.path = self.parent and self.id.replace(self.parent.id, '') or self.id
+
+    def __str__(self):
+        return """
+            id: {}
+            label: {}
+            type: {}
+            children: {}
+        """.format(self.id, self.label, self.type, self.children)
         
     def getId(self):
         return self.hashId
 
     def load(self, data=None):
         if data:
-            self.logger.debug("get manifest from url {}".format(self.url))
+            # self.logger.debug("loading manifest from url {}".format(self.url))
             self.data = data
             if self.id != self.data.get('id'):
                 self.logger.warning("url {} does not match id {}".format(self.url, self.data.get('id')))
@@ -54,21 +64,34 @@ class Manifest:
         return label
 
     
-    def getThumbnail(self):
-        thumbnails = self.data.get('thumbnail')
-        if isinstance(thumbnails, list):
-            return thumbnails[0].get('id')
-        else:
-            return None
+    def getThumbnailUrls(self):
+        items = self.data.get('items')
+        urls = []
+        for item in items:
+            try:
+                url = item.get('thumbnail')[0].get("id")
+                urls.append(url)
+            except:
+                self.logger.warning("no image url found for {}".format(item))
+        return urls
 
-    def getFlatList(self, manifest):
-        list = []
-        if manifest.type == 'Manifest':
+    def getImageUrls(self):
+        items = self.data.get('items')
+        urls = []
+        for item in items:
+            try:
+                url = item.get('items')[0].get('items')[0].get('body').get('id')
+                urls.append(url)
+            except:
+                self.logger.warning("no image url found for {}".format(item))
+        return urls
+
+    def getFlatList(self, manifest, type = 'Manifest', list = []):
+        if manifest.type == type:
             list.append(manifest)
 
         for item in manifest.children:
-            if item.type == 'Manifest':
-                list.extend(self.getFlatList(item))
+            self.getFlatList(item, type, list)
 
         return list
 
@@ -86,3 +109,22 @@ class Manifest:
     # async def loadDeep(self):
     #     for item in self.children:
     #         await item.loadChildren()
+
+
+
+async def main():
+    cache = Cache()
+
+    # url = "https://iiif.dl.itc.u-tokyo.ac.jp/iiif/2/collection/c-1"
+    url = "https://iiif.wellcomecollection.org/presentation/b2488473x"
+    data = await cache.getJson(url)
+
+    manifest = Manifest(url=url)
+    manifest.load(data)
+    # urls = manifest.getImageUrls()
+    # print(urls)
+    # print(manifest.getFlatList(manifest, 'Manifest'))
+
+if __name__ == "__main__":
+    asyncio.run(main())
+    
