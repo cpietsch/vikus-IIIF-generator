@@ -63,6 +63,31 @@ class Manifest:
         label = labels[0]
         return label
 
+    def getThumbnailUrl(self):
+        try:
+            return self.data.get('thumbnail')[0].get("id")
+        except:
+            self.logger.warning("no thumbnail found for {}".format(self))
+
+    def getImageUrl(self):
+        try:
+            return self.data.get('items')[0].get('items')[0].get('body').get('id')
+        except:
+            self.logger.warning("no image found for {}".format(self))
+
+    def getLargeImageUrl(self):
+        try:
+            body = self.data.get('items')[0].get('items')[0].get('body')
+            service = body.get('service')[0]
+            if service.get("@type") == "ImageService2":
+                return "{}/full/{},{}/0/default.jpg".format(
+                    service.get("@id"),
+                    service.get("width"),
+                    service.get("height")
+                )
+        except:
+            self.logger.warning("no image found for {}".format(self))
+
     
     def getThumbnailUrls(self):
         items = self.data.get('items')

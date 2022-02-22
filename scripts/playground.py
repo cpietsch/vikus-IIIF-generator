@@ -31,7 +31,7 @@ from features import FeatureExtractor
 
 pretty.install()
 
-debug = True
+debug = False
 loggingLevel = logging.DEBUG if debug else logging.INFO
 
 logging.basicConfig(
@@ -126,6 +126,16 @@ async def collect():
     list = manifest.getFlatList(manifest, type='Canvas')
 
     print(len(list))
+    # print(list[0])
+    # print(list[0].data)
+    # print(list[0].getLargeImageUrl())
+
+    imagesFromList = []
+    for canvas in list:
+        # print(canvas.getLargeImageUrl())
+        imagesFromList.append((canvas.getThumbnailUrl(), canvas.getImageUrl(), canvas.getLargeImageUrl()))
+
+    print(imagesFromList[0])
     # for manifest in list:
     #     print(manifest)
         
