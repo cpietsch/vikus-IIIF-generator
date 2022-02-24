@@ -4,6 +4,7 @@ import torch
 import logging
 import numpy as np
 from transformers import CLIPProcessor, CLIPModel
+from rich.progress import track
 
 
 class FeatureExtractor:
@@ -14,6 +15,7 @@ class FeatureExtractor:
         self.processor = None
         self.logger = kwargs.get('logger', logging.getLogger('FeatureExtractor'))
         self.cache = kwargs.get('cache', None)
+        self.progress = kwargs.get('progress', None)
         
     @torch.no_grad()
     def load_model(self):
@@ -29,22 +31,23 @@ class FeatureExtractor:
 
     @torch.no_grad()
     def extract_features(self, image_path):
-        self.logger.info("Extracting features from {}".format(image_path))
+        self.logger.debug("Extracting features from {}".format(image_path))
         image = self.prepareImage(image_path)
         inputs = self.processor(images=image, return_tensors="pt", padding=True)
         outputs = self.model.get_image_features(**inputs)
         detached = outputs.detach().numpy()
         return detached[0]
-    
+
+    @torch.no_grad()
     def get_features(self, id, image_path):
         if(self.cache):
             features = self.cache.getArray(id)
             if(features is not None):
-                self.logger.info("Found features in cache for {}".format(id))
+                self.logger.debug("Found features in cache for {}".format(id))
                 return features
         features = self.extract_features(image_path)
         if(self.cache):
-            self.logger.info("Caching features for {}".format(id))
+            self.logger.debug("Caching features for {}".format(id))
             self.cache.saveArray(id, features)
         return features
     
@@ -60,13 +63,13 @@ class FeatureExtractor:
     @torch.no_grad()
     def concurrent_extract_features(self, imageList):
         self.logger.info("Extracting features of {}".format(len(imageList)))
-        features = []
-        for (id,path) in imageList:
+        features = [] 
+        for (id,path) in track(imageList, description="Extracting features", total=len(imageList) ):
             feature = self.get_features(id, path)
             features.append(feature)
         self.logger.info("Extracted features of {}".format(len(imageList)))
-        return features
-        # return np.array(features)
+        #return features
+        return np.array(features)
 
 
 if __name__ == "__main__":

@@ -24,15 +24,15 @@ class Umaper:
 
     # @duration
     def fit_transform(self, X):
+        self.logger.info('Fit UMAP')
         embeddings = self.umap.fit_transform(X)
-        self.logger.info('umap fit_transform done')
         return embeddings
     
     def saveToCsv(self, X, path, images):
         dataframe = pd.DataFrame(data=X, columns=['x', 'y'])
         dataframe['id'] = [id for (id, path) in images]
         dataframe.set_index('id')
-        dataframe.to_csv("{}/embedding.csv".format(path), index=False)
+        dataframe.to_csv("{}/umap.csv".format(path), index=False)
         self.logger.info("Saved embedding to {}".format(path))
 
 if __name__ == "__main__":

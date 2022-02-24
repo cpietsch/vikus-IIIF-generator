@@ -14,6 +14,8 @@ import numpy as np
 
 from rich import pretty
 from rich.logging import RichHandler
+from rich.progress import Progress
+
 # from rich.console import Console
 # from rich.theme import Theme
 from rich import print
@@ -25,7 +27,7 @@ from cache import Cache
 from helpers import *
 from manifest import Manifest
 from features import FeatureExtractor
-# from umaper import Umaper
+from umaper import Umaper
 import pandas as pd
 from pandas.io.json import json_normalize
 
@@ -48,40 +50,6 @@ url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths
 
 
 @duration
-async def main():
-
-    cache = Cache()
-    #cache.clear()
-    
-    manifest = Manifest(url=url)
-    dataPath = createFolder("../data/{}".format(manifest.shortId))
-    thumbPath = createFolder("{}/images/thumbs".format(dataPath))
-    
-    print(thumbPath)
-    
-    manifestCrawler = ManifestCrawler(cache=cache,workers=2)
-    manifest = await manifestCrawler.crawl(manifest)
-    manifests = manifest.getFlatList(manifest, type='Canvas')
-    manifests = manifests[:1000]
-
-    imageCrawler = ImageCrawler(workers=8, path=thumbPath)
-    imageCrawler.addFromManifests(manifests)
-    images = await imageCrawler.runImageWorkers()
-
-    featureExtractor = FeatureExtractor("openai/clip-vit-base-patch32", "cpu", cache=cache)
-    featureExtractor.load_model()
-    features = featureExtractor.concurrent_extract_features(images)
-
-    umaper = Umaper(n_neighbors=3, min_dist=0.1, cache=cache)
-    embedding = umaper.fit_transform(features)
-    umaper.saveToCsv(embedding, dataPath, images)
-    
-    # print(embedding)
-    # print(manifest.tree)
-    # print(thumbnails)
-    print('Done')
-
-@duration
 async def test():
 
     cache = Cache()
@@ -95,20 +63,25 @@ async def test():
     manifestCrawler = ManifestCrawler(cache=cache,workers=2)
     manifest = await manifestCrawler.crawl(manifest)
     manifests = manifest.getFlatList(manifest, type='Canvas')
-    manifests = manifests[:10]
-
+    # manifests = manifests[:10]
 
     dataframe = pd.DataFrame(data=[m.getMetadata() for m in manifests])
     dataframe.to_csv(dataPath + '/metadata.csv', index=False)
     print(dataframe)
 
-    # featureExtractor = FeatureExtractor("openai/clip-vit-base-patch32", "cpu", cache=cache)
-    # featureExtractor.load_model()
-    # features = featureExtractor.concurrent_extract_features(images)
+    imageCrawler = ImageCrawler(workers=8, path=thumbPath)
+    imageCrawler.addFromManifests(manifests)
+    images = await imageCrawler.runImageWorkers()
 
-    # umaper = Umaper(n_neighbors=3, min_dist=0.1, cache=cache)
-    # embedding = umaper.fit_transform(features)
-    # umaper.saveToCsv(embedding, dataPath, images)
+    featureExtractor = FeatureExtractor("openai/clip-vit-base-patch32", "cpu", cache=cache)
+    featureExtractor.load_model()
+    features = featureExtractor.concurrent_extract_features(images)
+
+    print(features.shape)
+
+    umaper = Umaper(n_neighbors=3, min_dist=0.1, cache=cache)
+    embedding = umaper.fit_transform(features)
+    umaper.saveToCsv(embedding, dataPath, images)
     
     # print(embedding)
     # print(manifest.tree)
