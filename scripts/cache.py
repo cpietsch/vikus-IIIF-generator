@@ -2,17 +2,36 @@ import logging
 import redis
 import asyncio
 import requests, json, os, time, logging, sys
+import numpy as np
+import struct
 
 class Cache:
     def __init__(self, *args, **kwargs):
         self.redis = kwargs.get('redis', redis.Redis(host='redis', port=6379))
         self.logger = kwargs.get('logger', logging.getLogger('cache'))
     
-    def get(self, url):
-        return self.redis.get(url)
+    def get(self, id):
+        return self.redis.get(id)
+
+    def set(self, id, data):
+        self.redis.set(id, data)
 
     def clear(self):
         self.redis.flushdb()
+    
+    def saveArray(self,id, a):
+        encoded = a.tobytes()
+        # Store encoded data in Redis
+        self.redis.set(id,encoded)
+        return
+
+    def getArray(self,id):
+        """Retrieve Numpy array from Redis key 'n'"""
+        encoded = self.redis.get(id)
+        if encoded is None:
+            return None
+        a = np.frombuffer(encoded)
+        return a
 
     async def getJsonFromUrl(self,url, session = None, retries = 5):
         for i in range(retries):

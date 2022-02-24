@@ -9,7 +9,6 @@ import aiohttp
 import random
 import traceback
 import hashlib
-import pandas as pd
 
 import numpy as np
 
@@ -26,7 +25,7 @@ from cache import Cache
 from helpers import *
 from manifest import Manifest
 from features import FeatureExtractor
-# from umaper import Umaper
+from umaper import Umaper
 
 
 pretty.install()
@@ -66,42 +65,37 @@ async def main():
     )
     manifest = await manifestCrawler.crawl(manifest)
     
-    imageCrawler = ImageCrawler(workers=2, path=thumbPath)
-    for manifest in manifest.getFlatList(manifest):
-        imageCrawler.addFromManifest(manifest)
+    imageCrawler = ImageCrawler(workers=8, path=thumbPath)
+    canvasList = manifest.getFlatList(manifest, type='Canvas')
+    canvasList = canvasList[:1000]
+    
+    for canvas in canvasList:
+        imageCrawler.addFromManifest(canvas)
 
     images = await imageCrawler.runImageWorkers()
     print(images)
 
-    featureExtractor = FeatureExtractor("openai/clip-vit-base-patch32", "cpu")
+
+    featureExtractor = FeatureExtractor("openai/clip-vit-base-patch32", "cpu", cache=cache)
     featureExtractor.load_model()
 
-    # features = []
-    # for image in images:
-    #     feature = featureExtractor.extract_features(image)
-    #     # features = np.append(features, feature)
-    #     features.append(feature)
-    #     # print(features)
+    features = featureExtractor.concurrent_extract_features(images)
 
-    imagePaths = [path for (id, path) in images]
-    features = featureExtractor.batch_extract_features(imagePaths)
-
-    # features = np.array(features)
     # print(features)
-
-    umaper = Umaper(n_neighbors=3, min_dist=0.1)
+    
+    ids = [id for (id, path) in images]
+    umaper = Umaper(n_neighbors=3, min_dist=0.1, cache=cache)
     embedding = umaper.fit_transform(features)
+    umaper.saveToCsv(embedding, dataPath, ids)
     
     # print(embedding)
-
-    dataframe = pd.DataFrame(data=embedding, columns=['x', 'y'])
-    dataframe['id'] = [id for (id, path) in images]
-    dataframe.set_index('id')
-
-    dataframe.to_csv("{}/embedding.csv".format(dataPath), index=False)
-
     # print(manifest.tree)
     # print(thumbnails)
+    print('Done')
+
+def makeDataCsv(images, dataPath):
+    #print(manifest.tree)
+    #print(thumbnails)
     print('Done')
 
 @duration
@@ -119,7 +113,6 @@ async def collect():
     manifestCrawler = ManifestCrawler(
         cache=cache,
         workers=2,
-        #callback=imageCrawler.addFromManifest
     )
     manifest = await manifestCrawler.crawl(manifest)
 
@@ -136,21 +129,10 @@ async def collect():
         imagesFromList.append((canvas.getThumbnailUrl(), canvas.getImageUrl(), canvas.getLargeImageUrl()))
 
     print(imagesFromList[0])
-    # for manifest in list:
-    #     print(manifest)
-        
-    
-    # thumbs = []
-    # for manifest in manifest.getFlatList(manifest):
-    #     t = manifest.getThumbnailUrls()
-    #     print(manifest)
-    #     thumbs.append(t)
-
-    # print(len(thumbs))
 
 
     print('Done')
 
 if __name__ == "__main__":
-    asyncio.run(collect())
+    asyncio.run(main())
 

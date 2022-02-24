@@ -25,7 +25,7 @@ class ImageCrawler:
 
         
     def addFromManifest(self, manifest):
-        thumbnailUrl = manifest.getThumbnail()
+        thumbnailUrl = manifest.getThumbnailUrl()
         id = manifest.getId()
         self.logger.debug("adding {}".format(thumbnailUrl))
         if thumbnailUrl is not None:
