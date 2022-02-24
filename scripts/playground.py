@@ -25,8 +25,9 @@ from cache import Cache
 from helpers import *
 from manifest import Manifest
 from features import FeatureExtractor
-from umaper import Umaper
-
+# from umaper import Umaper
+import pandas as pd
+from pandas.io.json import json_normalize
 
 pretty.install()
 
@@ -58,48 +59,30 @@ async def main():
     
     print(thumbPath)
     
-    manifestCrawler = ManifestCrawler(
-        cache=cache,
-        workers=2,
-        #callback=imageCrawler.addFromManifest
-    )
+    manifestCrawler = ManifestCrawler(cache=cache,workers=2)
     manifest = await manifestCrawler.crawl(manifest)
-    
+    manifests = manifest.getFlatList(manifest, type='Canvas')
+    manifests = manifests[:1000]
+
     imageCrawler = ImageCrawler(workers=8, path=thumbPath)
-    canvasList = manifest.getFlatList(manifest, type='Canvas')
-    canvasList = canvasList[:1000]
-    
-    for canvas in canvasList:
-        imageCrawler.addFromManifest(canvas)
-
+    imageCrawler.addFromManifests(manifests)
     images = await imageCrawler.runImageWorkers()
-    print(images)
-
 
     featureExtractor = FeatureExtractor("openai/clip-vit-base-patch32", "cpu", cache=cache)
     featureExtractor.load_model()
-
     features = featureExtractor.concurrent_extract_features(images)
 
-    # print(features)
-    
-    ids = [id for (id, path) in images]
     umaper = Umaper(n_neighbors=3, min_dist=0.1, cache=cache)
     embedding = umaper.fit_transform(features)
-    umaper.saveToCsv(embedding, dataPath, ids)
+    umaper.saveToCsv(embedding, dataPath, images)
     
     # print(embedding)
     # print(manifest.tree)
     # print(thumbnails)
     print('Done')
 
-def makeDataCsv(images, dataPath):
-    #print(manifest.tree)
-    #print(thumbnails)
-    print('Done')
-
 @duration
-async def collect():
+async def test():
 
     cache = Cache()
     #cache.clear()
@@ -107,32 +90,31 @@ async def collect():
     manifest = Manifest(url=url)
     dataPath = createFolder("../data/{}".format(manifest.shortId))
     thumbPath = createFolder("{}/images/thumbs".format(dataPath))
+    print(thumbPath)
     
-    # print(thumbPath)
-    
-    manifestCrawler = ManifestCrawler(
-        cache=cache,
-        workers=2,
-    )
+    manifestCrawler = ManifestCrawler(cache=cache,workers=2)
     manifest = await manifestCrawler.crawl(manifest)
-
-    list = manifest.getFlatList(manifest, type='Canvas')
-
-    print(len(list))
-    # print(list[0])
-    # print(list[0].data)
-    # print(list[0].getLargeImageUrl())
-
-    imagesFromList = []
-    for canvas in list:
-        # print(canvas.getLargeImageUrl())
-        imagesFromList.append((canvas.getThumbnailUrl(), canvas.getImageUrl(), canvas.getLargeImageUrl()))
-
-    print(imagesFromList[0])
+    manifests = manifest.getFlatList(manifest, type='Canvas')
+    manifests = manifests[:10]
 
 
+    dataframe = pd.DataFrame(data=[m.getMetadata() for m in manifests])
+    dataframe.to_csv(dataPath + '/metadata.csv', index=False)
+    print(dataframe)
+
+    # featureExtractor = FeatureExtractor("openai/clip-vit-base-patch32", "cpu", cache=cache)
+    # featureExtractor.load_model()
+    # features = featureExtractor.concurrent_extract_features(images)
+
+    # umaper = Umaper(n_neighbors=3, min_dist=0.1, cache=cache)
+    # embedding = umaper.fit_transform(features)
+    # umaper.saveToCsv(embedding, dataPath, images)
+    
+    # print(embedding)
+    # print(manifest.tree)
+    # print(thumbnails)
     print('Done')
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(test())
 

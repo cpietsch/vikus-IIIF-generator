@@ -23,6 +23,9 @@ class ImageCrawler:
         self.done = []
         self.overwrite = kwargs.get('overwrite', False)
 
+    def addFromManifests(self, manifests):
+        for manifest in manifests:
+            self.addFromManifest(manifest)
         
     def addFromManifest(self, manifest):
         thumbnailUrl = manifest.getThumbnailUrl()

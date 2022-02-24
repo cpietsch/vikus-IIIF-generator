@@ -122,6 +122,35 @@ class Manifest:
 
     def getChildren(self):
         return self.children
+    
+    def getMetadata(self, list = {}):
+        
+        if(self.type == 'Canvas'):
+            list['id'] = self.hashId
+            list['thumbnail'] = self.getThumbnailUrl()
+            list['image'] = self.getImageUrl()
+            list['largeImage'] = self.getLargeImageUrl()
+
+            if(self.parent is None):
+                return list
+            return self.parent.getMetadata(list)
+        
+        metadata = self.data.get('metadata')
+        if(metadata is None):
+            self.logger.warning("no metadata found for {}".format(self))
+            return None
+
+        list['label'] = self.label
+        list['iiif'] = self.id
+        
+        try:
+            for item in metadata:
+                label = next(iter(item.get('label').values()))[0]
+                value = next(iter(item.get('value').values()))[0]
+                list[label] = value
+        except:
+            self.logger.warning("error in metadata {}".format(self))
+        return list
 
     # async def loadChildren(self):
     #     if self.data.get('items', False) and not self.loaded:
@@ -146,9 +175,7 @@ async def main():
 
     manifest = Manifest(url=url)
     manifest.load(data)
-    # urls = manifest.getImageUrls()
-    # print(urls)
-    # print(manifest.getFlatList(manifest, 'Manifest'))
+    print(manifest.getMetadata())
 
 if __name__ == "__main__":
     asyncio.run(main())

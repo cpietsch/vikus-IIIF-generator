@@ -28,9 +28,9 @@ class Umaper:
         self.logger.info('umap fit_transform done')
         return embeddings
     
-    def saveToCsv(self, X, path, ids):
+    def saveToCsv(self, X, path, images):
         dataframe = pd.DataFrame(data=X, columns=['x', 'y'])
-        dataframe['id'] = ids
+        dataframe['id'] = [id for (id, path) in images]
         dataframe.set_index('id')
         dataframe.to_csv("{}/embedding.csv".format(path), index=False)
         self.logger.info("Saved embedding to {}".format(path))

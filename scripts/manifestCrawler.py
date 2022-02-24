@@ -55,7 +55,7 @@ class ManifestCrawler:
                         
                         if self.limitRecursion and manifest.depth >= self.limitRecursion:
                             continue
-
+ 
                         if child.type == 'Collection' or child.type == 'Manifest':
                             queue.put_nowait((prio + 1 + random.uniform(0, 1), child))
 
