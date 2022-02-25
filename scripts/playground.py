@@ -45,8 +45,8 @@ logging.basicConfig(
 logger = logging.getLogger('rich')
 
 #url = "https://iiif.wellcomecollection.org/presentation/v3/collections/genres"
-#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
-url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths_and_legends"
+url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
+#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths_and_legends"
 
 
 @duration
