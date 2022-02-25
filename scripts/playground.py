@@ -65,6 +65,7 @@ async def test():
     manifests = manifest.getFlatList(manifest, type='Canvas')
     # manifests = manifests[:10]
 
+    
     dataframe = pd.DataFrame(data=[m.getMetadata() for m in manifests])
     dataframe.to_csv(dataPath + '/metadata.csv', index=False)
     print(dataframe)

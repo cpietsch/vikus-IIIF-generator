@@ -22,8 +22,9 @@ ENV PORT 5000
 EXPOSE $PORT
 
 # Using Debian, as root
-# RUN curl -fsSL https://deb.nodesource.com/setup_17.x | bash -
-# RUN apt-get install -y nodejs
+RUN curl -fsSL https://deb.nodesource.com/setup_17.x | bash -
+RUN apt-get install -y nodejs
+RUN npm install -g sharpsheet
 
 #CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app
 

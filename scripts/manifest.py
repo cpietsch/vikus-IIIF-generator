@@ -27,11 +27,11 @@ class Manifest:
 
     def __str__(self):
         return """
-            id: {}
-            label: {}
-            type: {}
-            children: {}
-        """.format(self.id, self.label, self.type, self.children)
+        id: {}
+        label: {}
+        type: {}
+        parent: {}
+        """.format(self.id, self.label, self.type, self.parent)
         
     def getId(self):
         return self.hashId
@@ -171,6 +171,7 @@ async def main():
 
     # url = "https://iiif.dl.itc.u-tokyo.ac.jp/iiif/2/collection/c-1"
     url = "https://iiif.wellcomecollection.org/presentation/b2488473x"
+    # url = "https://iiif.wellcomecollection.org/presentation/b16894376" # behind auth, non public
     data = await cache.getJson(url)
 
     manifest = Manifest(url=url)
