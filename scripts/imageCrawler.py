@@ -5,6 +5,7 @@ import aiohttp
 import random
 import time
 import logging
+from rich.progress import Progress
 
 class ImageCrawler:
     def __init__(self, *args, **kwargs):
@@ -57,7 +58,9 @@ class ImageCrawler:
                 return None
 
     async def imageWorker(self, name):
-        self.logger.debug("imageworker {} started".format(name))
+        self.logger.debug("[red]imageworker {} started".format(name))
+        # with Progress() as progress:
+        #     task = progress.add_task("imageworker {} downloading".format(name), total=int(self.queue.qsize/self.workers))
         async with aiohttp.ClientSession() as session:
             while True:
                 try:
@@ -75,18 +78,19 @@ class ImageCrawler:
                         self.callback(id, filepath)
                 else:
                     self.logger.debug("{} failed to download {}".format(name, url))
-                self.queue.task_done()
                 
+                # progress.update(task, advance=1)
+                self.queue.task_done()
                 self.logger.debug(f'{name}: {url} done, {self.queue.qsize()} items left')
 
     async def runImageWorkers(self):
         self.logger.debug("runImageWorkers")
         # Create a queue that we will use to store our "workload".
-
+              
         for i in range(self.workers):
             task = asyncio.create_task(self.imageWorker(f'worker-{i}'))
             self.tasks.append(task)
-        
+
         await self.queue.join()
 
         # Cancel our worker tasks.

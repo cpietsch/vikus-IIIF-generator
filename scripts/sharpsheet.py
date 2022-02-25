@@ -15,7 +15,7 @@ class Sharpsheet:
         quality = kwargs.get('quality', 60)
         dimension = kwargs.get('dimension', '2048')
         outputPath = kwargs.get('outputPath', os.path.abspath(os.path.join(inputPath, '../sprites/')))
-        input = inputPath + '*.jpg'
+        input = inputPath + '/*.jpg'
 
         command = ['sharpsheet', input,
             '--outputPath', outputPath,

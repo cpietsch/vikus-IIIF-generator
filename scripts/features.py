@@ -77,7 +77,7 @@ if __name__ == "__main__":
     extractor.load_model()
     testImagePath = '../data/Myths_and_legends/images/thumbs/88440f2d48876bd4d2e93fb3b391a082.jpg'
     features = extractor.extract_features(testImagePath)
-    print(features)
+    print(features.shape)
     features2 = extractor.get_features('test',testImagePath)
-    print(features2)
+    print(features2.shape)
     print(features == features2)

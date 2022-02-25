@@ -27,7 +27,9 @@ from cache import Cache
 from helpers import *
 from manifest import Manifest
 from features import FeatureExtractor
-from umaper import Umaper
+from dimensionReductor import DimensionReductor
+from sharpsheet import Sharpsheet
+
 import pandas as pd
 from pandas.io.json import json_normalize
 
@@ -45,9 +47,9 @@ logging.basicConfig(
 logger = logging.getLogger('rich')
 
 #url = "https://iiif.wellcomecollection.org/presentation/v3/collections/genres"
-url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
-#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths_and_legends"
-
+# url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
+# url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths_and_legends"
+url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Advertisements"
 
 @duration
 async def test():
@@ -65,7 +67,6 @@ async def test():
     manifests = manifest.getFlatList(manifest, type='Canvas')
     # manifests = manifests[:10]
 
-    
     dataframe = pd.DataFrame(data=[m.getMetadata() for m in manifests])
     dataframe.to_csv(dataPath + '/metadata.csv', index=False)
     print(dataframe)
@@ -74,13 +75,16 @@ async def test():
     imageCrawler.addFromManifests(manifests)
     images = await imageCrawler.runImageWorkers()
 
+    spriter = Sharpsheet(logger=logger)
+    await spriter.generate(thumbPath)
+
     featureExtractor = FeatureExtractor("openai/clip-vit-base-patch32", "cpu", cache=cache)
     featureExtractor.load_model()
     features = featureExtractor.concurrent_extract_features(images)
 
     print(features.shape)
 
-    umaper = Umaper(n_neighbors=3, min_dist=0.1, cache=cache)
+    umaper = DimensionReductor(n_neighbors=3, min_dist=0.1, cache=cache)
     embedding = umaper.fit_transform(features)
     umaper.saveToCsv(embedding, dataPath, images)
     
