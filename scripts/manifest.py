@@ -18,11 +18,13 @@ class Manifest:
         self.url = kwargs.get('url', '')
         self.parent = kwargs.get('parent', None)
         self.label = None
-        self.tree =  kwargs.get('tree', self.parent and self.parent.tree or None)
+        self.tree = kwargs.get(
+            'tree', self.parent and self.parent.tree or None)
         self.type = None
         self.logger = kwargs.get('logger', logging.getLogger('rich'))
         self.shortId = self.id.split('/')[-1]
-        self.hashId = self.hashId = hashlib.md5(self.id.encode('utf-8')).hexdigest()
+        self.hashId = self.hashId = hashlib.md5(
+            self.id.encode('utf-8')).hexdigest()
         #self.path = self.parent and self.id.replace(self.parent.id, '') or self.id
 
     def __str__(self):
@@ -32,7 +34,7 @@ class Manifest:
         type: {}
         parent: {}
         """.format(self.id, self.label, self.type, self.parent)
-        
+
     def getId(self):
         return self.hashId
 
@@ -41,20 +43,22 @@ class Manifest:
             # self.logger.debug("loading manifest from url {}".format(self.url))
             self.data = data
             if self.id != self.data.get('id'):
-                self.logger.warning("url {} does not match id {}".format(self.url, self.data.get('id')))
+                self.logger.warning("url {} does not match id {}".format(
+                    self.url, self.data.get('id')))
             self.id = self.data.get('id')
-            
+
             self.label = self.getLabel(self.data)
             self.type = self.data.get('type')
 
             if(self.tree is None):
-                self.tree = Tree(f":open_file_folder: [link {self.id}]{self.id}")
+                self.tree = Tree(
+                    f":open_file_folder: [link {self.id}]{self.id}")
             else:
                 emoji = self.type == 'Collection' and ':open_file_folder:' or ':framed_picture:'
                 self.tree = self.tree.add(f"{emoji} [link {self.id}]{self.id}")
 
             return self
-    
+
     def add(self, child):
         self.children.append(child)
 
@@ -88,7 +92,6 @@ class Manifest:
         except:
             self.logger.warning("no image found for {}".format(self))
 
-    
     def getThumbnailUrls(self):
         items = self.data.get('items')
         urls = []
@@ -105,13 +108,14 @@ class Manifest:
         urls = []
         for item in items:
             try:
-                url = item.get('items')[0].get('items')[0].get('body').get('id')
+                url = item.get('items')[0].get('items')[
+                    0].get('body').get('id')
                 urls.append(url)
             except:
                 self.logger.warning("no image url found for {}".format(item))
         return urls
 
-    def getFlatList(self, manifest, type = 'Manifest', list = []):
+    def getFlatList(self, manifest, type='Manifest', list=[]):
         if manifest.type == type:
             list.append(manifest)
 
@@ -122,35 +126,40 @@ class Manifest:
 
     def getChildren(self):
         return self.children
-    
-    def getMetadata(self, list = {}):
-        
+
+    def getMetadata(self, arr=None):
+        if arr is None:
+            arr = {}
+
         if(self.type == 'Canvas'):
-            list['id'] = self.hashId
-            list['thumbnail'] = self.getThumbnailUrl()
-            list['image'] = self.getImageUrl()
-            list['largeImage'] = self.getLargeImageUrl()
+            arr['id'] = self.getId()
+            arr['thumbnail'] = self.getThumbnailUrl()
+            arr['image'] = self.getImageUrl()
+            arr['largeImage'] = self.getLargeImageUrl()
 
             if(self.parent is None):
-                return list
-            return self.parent.getMetadata(list)
-        
+                return arr
+
+            return self.parent.getMetadata(arr)
+
         metadata = self.data.get('metadata')
         if(metadata is None):
             self.logger.warning("no metadata found for {}".format(self))
             return None
 
-        list['label'] = self.label
-        list['iiif'] = self.id
-        
+        arr['label'] = self.label
+        arr['iiif'] = self.id
+
         try:
             for item in metadata:
                 label = next(iter(item.get('label').values()))[0]
                 value = next(iter(item.get('value').values()))[0]
-                list[label] = value
+                arr[label] = value
         except:
             self.logger.warning("error in metadata {}".format(self))
-        return list
+
+        # print(list)
+        return arr
 
     # async def loadChildren(self):
     #     if self.data.get('items', False) and not self.loaded:
@@ -163,7 +172,6 @@ class Manifest:
     # async def loadDeep(self):
     #     for item in self.children:
     #         await item.loadChildren()
-
 
 
 async def main():
@@ -180,4 +188,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-    

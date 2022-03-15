@@ -1,6 +1,11 @@
 
 # from PIL import Image
-import requests, json, os, time, logging, sys
+import requests
+import json
+import os
+import time
+import logging
+import sys
 # from flask import Flask, request, jsonify
 # from flask_cors import CORS
 # from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer
@@ -35,39 +40,42 @@ from pandas.io.json import json_normalize
 
 pretty.install()
 
-debug = False
+debug = True
 loggingLevel = logging.DEBUG if debug else logging.INFO
 
 logging.basicConfig(
     level=loggingLevel,
     # format="%(message)s",
     datefmt="%X",
-    handlers=[RichHandler(show_time=True, rich_tracebacks=True, tracebacks_show_locals=True)]
+    handlers=[RichHandler(
+        show_time=True, rich_tracebacks=True, tracebacks_show_locals=True)]
 )
 logger = logging.getLogger('rich')
 
 #url = "https://iiif.wellcomecollection.org/presentation/v3/collections/genres"
-# url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
-# url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths_and_legends"
-url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Advertisements"
+#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
+url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths_and_legends"
+#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Advertisements"
+
 
 @duration
 async def test():
 
     cache = Cache()
-    #cache.clear()
-    
+    # cache.clear()
+
     manifest = Manifest(url=url)
     dataPath = createFolder("../data/{}".format(manifest.shortId))
     thumbPath = createFolder("{}/images/thumbs".format(dataPath))
     print(thumbPath)
-    
-    manifestCrawler = ManifestCrawler(cache=cache,workers=2)
+
+    manifestCrawler = ManifestCrawler(cache=cache, workers=2)
     manifest = await manifestCrawler.crawl(manifest)
     manifests = manifest.getFlatList(manifest, type='Canvas')
-    # manifests = manifests[:10]
+    # manifests = manifests[:5]
 
-    dataframe = pd.DataFrame(data=[m.getMetadata() for m in manifests])
+    metadata = [m.getMetadata() for m in manifests]
+    dataframe = pd.DataFrame(metadata)
     dataframe.to_csv(dataPath + '/metadata.csv', index=False)
     print(dataframe)
 
@@ -78,16 +86,17 @@ async def test():
     spriter = Sharpsheet(logger=logger)
     await spriter.generate(thumbPath)
 
-    featureExtractor = FeatureExtractor("openai/clip-vit-base-patch32", "cpu", cache=cache)
+    featureExtractor = FeatureExtractor(
+        "openai/clip-vit-base-patch32", "cpu", cache=cache)
     featureExtractor.load_model()
     features = featureExtractor.concurrent_extract_features(images)
 
-    print(features.shape)
+    # print(features.shape)
 
-    umaper = DimensionReductor(n_neighbors=3, min_dist=0.1, cache=cache)
+    umaper = DimensionReductor(n_neighbors=15, min_dist=0.5, cache=cache)
     embedding = umaper.fit_transform(features)
     umaper.saveToCsv(embedding, dataPath, images)
-    
+
     # print(embedding)
     # print(manifest.tree)
     # print(thumbnails)
@@ -95,4 +104,3 @@ async def test():
 
 if __name__ == "__main__":
     asyncio.run(test())
-
