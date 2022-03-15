@@ -40,7 +40,7 @@ from pandas.io.json import json_normalize
 
 pretty.install()
 
-debug = True
+debug = False
 loggingLevel = logging.DEBUG if debug else logging.INFO
 
 logging.basicConfig(
@@ -54,9 +54,10 @@ logger = logging.getLogger('rich')
 
 #url = "https://iiif.wellcomecollection.org/presentation/v3/collections/genres"
 #url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
-url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths_and_legends"
+#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths_and_legends"
 #url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Advertisements"
-
+url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Stickers"
+#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Watercolors"
 
 @duration
 async def test():
@@ -72,7 +73,7 @@ async def test():
     manifestCrawler = ManifestCrawler(cache=cache, workers=2)
     manifest = await manifestCrawler.crawl(manifest)
     manifests = manifest.getFlatList(manifest, type='Canvas')
-    # manifests = manifests[:5]
+    #manifests = manifests[:2]
 
     metadata = [m.getMetadata() for m in manifests]
     dataframe = pd.DataFrame(metadata)
@@ -87,15 +88,16 @@ async def test():
     await spriter.generate(thumbPath)
 
     featureExtractor = FeatureExtractor(
-        "openai/clip-vit-base-patch32", "cpu", cache=cache)
+        "openai/clip-vit-base-patch32", "cpu", cache=cache, overwrite=False)
     featureExtractor.load_model()
-    features = featureExtractor.concurrent_extract_features(images)
+    (ids, features) = featureExtractor.concurrent_extract_features(images)
 
-    # print(features.shape)
+    # print(ids, features)
+    # print(features[0])
 
     umaper = DimensionReductor(n_neighbors=15, min_dist=0.5, cache=cache)
     embedding = umaper.fit_transform(features)
-    umaper.saveToCsv(embedding, dataPath, images)
+    umaper.saveToCsv(embedding, dataPath, ids)
 
     # print(embedding)
     # print(manifest.tree)

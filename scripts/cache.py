@@ -19,18 +19,20 @@ class Cache:
     def clear(self):
         self.redis.flushdb()
     
-    def saveArray(self,id, a):
+    def saveFeatures(self,id, a):
+        # print("saveFeatures", a.shape)
         encoded = a.tobytes()
         # Store encoded data in Redis
-        self.redis.set(id,encoded)
+        self.redis.set("f{}".format(id),encoded)
         return
 
-    def getArray(self,id):
+    def getFeatures(self,id):
         """Retrieve Numpy array from Redis key 'n'"""
-        encoded = self.redis.get(id)
+        encoded = self.redis.get("f{}".format(id))
         if encoded is None:
             return None
-        a = np.frombuffer(encoded)
+        a = np.frombuffer(encoded, dtype=np.float32, count=512)
+        # print("getFeatures", a.shape)
         return a
 
     async def getJsonFromUrl(self,url, session = None, retries = 5):

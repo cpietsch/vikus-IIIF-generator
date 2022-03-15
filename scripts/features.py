@@ -16,6 +16,7 @@ class FeatureExtractor:
         self.logger = kwargs.get('logger', logging.getLogger('FeatureExtractor'))
         self.cache = kwargs.get('cache', None)
         self.progress = kwargs.get('progress', None)
+        self.overwrite = kwargs.get('overwrite', False)
         
     @torch.no_grad()
     def load_model(self):
@@ -40,15 +41,15 @@ class FeatureExtractor:
 
     @torch.no_grad()
     def get_features(self, id, image_path):
-        if(self.cache):
-            features = self.cache.getArray(id)
+        if(self.cache and not self.overwrite):
+            features = self.cache.getFeatures(id)
             if(features is not None):
                 self.logger.debug("Found features in cache for {}".format(id))
                 return features
         features = self.extract_features(image_path)
         if(self.cache):
             self.logger.debug("Caching features for {}".format(id))
-            self.cache.saveArray(id, features)
+            self.cache.saveFeatures(id, features)
         return features
     
     @torch.no_grad()
@@ -63,17 +64,20 @@ class FeatureExtractor:
     @torch.no_grad()
     def concurrent_extract_features(self, imageList):
         self.logger.info("Extracting features of {}".format(len(imageList)))
-        features = [] 
+        features = []
+        ids = []
         for (id,path) in track(imageList, description="Extracting features", total=len(imageList) ):
             feature = self.get_features(id, path)
+            # print(id, feature.shape)
             features.append(feature)
+            ids.append(id)
         self.logger.info("Extracted features of {}".format(len(imageList)))
-        #return features
-        return np.array(features)
+        return ( ids, features)
+        #return np.array(featureList)
 
 
 if __name__ == "__main__":
-    extractor = FeatureExtractor("openai/clip-vit-base-patch32", "cpu")
+    extractor = FeatureExtractor("openai/clip-vit-base-patch32", "cpu", overwrite=True)
     extractor.load_model()
     testImagePath = '../data/Myths_and_legends/images/thumbs/88440f2d48876bd4d2e93fb3b391a082.jpg'
     features = extractor.extract_features(testImagePath)

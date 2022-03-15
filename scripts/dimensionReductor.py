@@ -25,12 +25,14 @@ class DimensionReductor:
     # @duration
     def fit_transform(self, X):
         self.logger.info('Fit UMAP')
+        X = np.array(X)
+        self.logger.info('X shape: {}'.format(X.shape))
         embeddings = self.umap.fit_transform(X)
         return embeddings
     
-    def saveToCsv(self, X, path, images):
+    def saveToCsv(self, X, path, ids):
         dataframe = pd.DataFrame(data=X, columns=['x', 'y'])
-        dataframe['id'] = [id for (id, path) in images]
+        dataframe['id'] = ids
         dataframe.set_index('id')
         dataframe.to_csv("{}/umap.csv".format(path), index=False)
         self.logger.info("Saved embedding to {}".format(path))
