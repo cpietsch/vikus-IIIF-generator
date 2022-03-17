@@ -128,6 +128,12 @@ class Manifest:
         return self.children
 
     def getMetadata(self, arr=None):
+        """
+        Returns a dictionary of metadata for this object.
+        If arr is not None, the metadata is added to the dictionary.
+        If arr is None, a new dictionary is created.
+        """
+
         if arr is None:
             arr = {}
 
