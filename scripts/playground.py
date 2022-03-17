@@ -53,10 +53,10 @@ logging.basicConfig(
 logger = logging.getLogger('rich')
 
 #url = "https://iiif.wellcomecollection.org/presentation/v3/collections/genres"
-#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
+url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
 #url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths_and_legends"
 #url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Advertisements"
-url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Stickers"
+#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Stickers"
 #url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Watercolors"
 
 @duration
@@ -95,14 +95,19 @@ async def test():
     # print(ids, features)
     # print(features[0])
 
-    umaper = DimensionReductor(n_neighbors=15, min_dist=0.5, cache=cache)
+    umaper = DimensionReductor(n_neighbors=15, min_dist=0.2)
     embedding = umaper.fit_transform(features)
     umaper.saveToCsv(embedding, dataPath, ids)
+
+    umaper = DimensionReductor(n_neighbors=3, min_dist=0.2)
+    embedding = umaper.fit_transform(features)
+    umaper.saveToCsv(embedding, dataPath, ids, "umap3")
 
     # print(embedding)
     # print(manifest.tree)
     # print(thumbnails)
     print('Done')
+    print('Open http://localhost:8000/viewer/?{}'.format(manifest.shortId))
 
 if __name__ == "__main__":
     asyncio.run(test())

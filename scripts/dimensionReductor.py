@@ -4,6 +4,8 @@ import numpy as np
 import pandas as pd
 import logging
 from helpers import *
+from rasterfairy import coonswarp
+import rasterfairy
 
 class DimensionReductor:
     def __init__(self, n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean', cache=None):
@@ -30,11 +32,11 @@ class DimensionReductor:
         embeddings = self.umap.fit_transform(X)
         return embeddings
     
-    def saveToCsv(self, X, path, ids):
+    def saveToCsv(self, X, path, ids, name = "umap"):
         dataframe = pd.DataFrame(data=X, columns=['x', 'y'])
         dataframe['id'] = ids
         dataframe.set_index('id')
-        dataframe.to_csv("{}/umap.csv".format(path), index=False)
+        dataframe.to_csv("{}/{}.csv".format(path, name), index=False)
         self.logger.info("Saved embedding to {}".format(path))
 
 if __name__ == "__main__":
@@ -42,4 +44,13 @@ if __name__ == "__main__":
     features = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [7, 8, 9], [7, 8, 9], [7, 1, 9], [7, 8, 9], [7, 8, 9], [1, 8, 9]]
     features = np.array(features)
     embedding = umap.fit_transform(features)
-    print(embedding)
+    # print(embedding)
+    # umap = np.array((embedding + 1)/2)
+    # print(umap)
+    # umap = coonswarp.rectifyCloud(umap,
+    #   perimeterSubdivisionSteps=4,
+    #   autoPerimeterOffset=False,
+    #   paddingScale=1.05)
+    # pos = rasterfairy.transformPointCloud2D(umap)[0]
+
+    # print(pos)

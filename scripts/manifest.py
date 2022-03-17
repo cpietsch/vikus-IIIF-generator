@@ -79,15 +79,27 @@ class Manifest:
         except:
             self.logger.warning("no image found for {}".format(self))
 
-    def getLargeImageUrl(self):
+    def getLargeImageUrl(self, max = 4096):
         try:
             body = self.data.get('items')[0].get('items')[0].get('body')
             service = body.get('service')[0]
             if service.get("@type") == "ImageService2":
-                return "{}/full/{},{}/0/default.jpg".format(
+                width = service.get("width")
+                height = service.get("height")
+
+                if width > max or height > max:
+                    if(width > height):
+                        ratio = max / width
+                    else:
+                        ratio = max / height
+                    
+                    return "{}/full/{},{}/0/default.jpg".format(
+                        service.get("@id"),
+                        int(width * ratio),
+                        int(height * ratio)
+                    )  
+                return "{}/full/full/0/default.jpg".format(
                     service.get("@id"),
-                    service.get("width"),
-                    service.get("height")
                 )
         except:
             self.logger.warning("no image found for {}".format(self))
@@ -134,7 +146,9 @@ class Manifest:
         if(self.type == 'Canvas'):
             arr['id'] = self.getId()
             arr['thumbnail'] = self.getThumbnailUrl()
-            arr['image'] = self.getImageUrl()
+            # arr['image'] = self.getImageUrl()
+            # hack for welcome collection
+            arr['image'] = self.getLargeImageUrl(1025)
             arr['largeImage'] = self.getLargeImageUrl()
 
             if(self.parent is None):
