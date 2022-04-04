@@ -39,10 +39,13 @@ class Cache:
         for i in range(retries):
             try:
                 if session is None:
-                    return requests.get(url).text
+                    response = requests.get(url).text
+                    return text.encode('utf-8')
                 
                 async with session.get(url) as response:
-                    return await response.text()
+                    text = await response.text(encoding='utf-8')
+                    return text
+
             except Exception as e:
                 self.logger.error(e)
                 self.logger.error("retry {i} {url}" .format(i=i, url=url))
