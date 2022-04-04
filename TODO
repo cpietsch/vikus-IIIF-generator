@@ -1,0 +1,3 @@
+cp -sr /usr/share/nginx/html/viewer/* .
+apt-get install zip
+zip --symlinks -r test.zip test/

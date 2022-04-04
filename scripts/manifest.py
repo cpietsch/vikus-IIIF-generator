@@ -199,8 +199,11 @@ async def main():
 
     # url = "https://iiif.dl.itc.u-tokyo.ac.jp/iiif/2/collection/c-1"
     url = "https://iiif.wellcomecollection.org/presentation/b2488473x"
-    # url = "https://iiif.wellcomecollection.org/presentation/b16894376" # behind auth, non public
-    data = await cache.getJson(url)
+    #url = "https://iiif.wellcomecollection.org/presentation/b16894376" # behind auth, non public
+
+    #url = "https://iiif.bodleian.ox.ac.uk/iiif/manifest/e32a277e-91e2-4a6d-8ba6-cc4bad230410.json"
+    #data = await cache.getJson(url)
+    data = await cache.getJsonFromUrl(url)
 
     manifest = Manifest(url=url)
     manifest.load(data)

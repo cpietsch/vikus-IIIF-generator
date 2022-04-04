@@ -53,11 +53,12 @@ logging.basicConfig(
 logger = logging.getLogger('rich')
 
 #url = "https://iiif.wellcomecollection.org/presentation/v3/collections/genres"
-url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
+#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
 #url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths_and_legends"
 #url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Advertisements"
 #url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Stickers"
-#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Watercolors"
+url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Watercolors"
+#url = "https://iiif.bodleian.ox.ac.uk/iiif/manifest/e32a277e-91e2-4a6d-8ba6-cc4bad230410.json"
 
 @duration
 async def test():
