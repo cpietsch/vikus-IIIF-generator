@@ -32,7 +32,7 @@ class Cache:
         if encoded is None:
             return None
         a = np.frombuffer(encoded, dtype=np.float32, count=512)
-        # print("getFeatures", a.shape)
+        # print("getFeatures", a.shape) 
         return a
 
     async def getJsonFromUrl(self,url, session = None, retries = 5):
