@@ -61,13 +61,14 @@ url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Water
 #url = "https://iiif.bodleian.ox.ac.uk/iiif/manifest/e32a277e-91e2-4a6d-8ba6-cc4bad230410.json"
 
 @duration
-async def test():
+async def run_all(url, path, id):
 
     cache = Cache()
     # cache.clear()
 
     manifest = Manifest(url=url)
-    dataPath = createFolder("../data/{}".format(manifest.shortId))
+    # dataPath = createFolder("../data/{}".format(manifest.shortId))
+    dataPath = createFolder(path)
     thumbPath = createFolder("{}/images/thumbs".format(dataPath))
     print(thumbPath)
 
@@ -79,7 +80,7 @@ async def test():
     metadata = [m.getMetadata() for m in manifests]
     dataframe = pd.DataFrame(metadata)
     dataframe.to_csv(dataPath + '/metadata.csv', index=False)
-    print(dataframe)
+    #print(dataframe)
 
     imageCrawler = ImageCrawler(workers=8, path=thumbPath)
     imageCrawler.addFromManifests(manifests)
@@ -108,7 +109,15 @@ async def test():
     # print(manifest.tree)
     # print(thumbnails)
     print('Done')
-    print('Open http://localhost:8000/viewer/?{}'.format(manifest.shortId))
+    print('Open http://localhost:8000/viewer/?{}'.format(id))
+
+    instance_url = 'http://localhost:8000/viewer/?{}'.format(id)
+
+    return {
+        'id': id,
+        'url': instance_url,
+        'path': path,
+    }
 
 if __name__ == "__main__":
-    asyncio.run(test())
+    asyncio.run(main(url))
