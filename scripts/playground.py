@@ -37,8 +37,12 @@ from sharpsheet import Sharpsheet
 
 import pandas as pd
 from pandas.io.json import json_normalize
+import uuid
 
 pretty.install()
+
+DATA_DIR = "../data"
+MANIFESTWORKERS = 2
 
 debug = False
 loggingLevel = logging.DEBUG if debug else logging.INFO
@@ -52,6 +56,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger('rich')
 
+cache = Cache()
+# cache.clear()
+
 #url = "https://iiif.wellcomecollection.org/presentation/v3/collections/genres"
 #url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
 #url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths_and_legends"
@@ -62,9 +69,6 @@ url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Water
 
 @duration
 async def run_all(url, path, id):
-
-    cache = Cache()
-    # cache.clear()
 
     manifest = Manifest(url=url)
     # dataPath = createFolder("../data/{}".format(manifest.shortId))
@@ -119,5 +123,37 @@ async def run_all(url, path, id):
         'path': path,
     }
 
+def create_config_json(iiif_url: str, label: str):
+    uid = str(uuid.uuid4())
+    if label is None:
+        label = uid
+    path = os.path.join(DATA_DIR, uid)
+    os.mkdir(path)
+    timestamp = int(time.time())
+
+    config = {
+        "id": uid,
+        "label": label,
+        "iiif_url": iiif_url,
+        "path": path,
+        "created": timestamp,
+        "updated": timestamp,
+        "status": "created"
+    }
+
+    with open(os.path.join(path, "instance.json"), "w") as f:
+        f.write(json.dumps(config, indent=4))
+    return config
+
+@duration
+async def crawl(url):
+    manifest = Manifest(url=url)
+    
+    manifestCrawler = ManifestCrawler(cache=cache, workers=MANIFESTWORKERS)
+    manifest = await manifestCrawler.crawl(manifest)
+    manifests = manifest.getFlatList(manifest, type='Canvas')
+
+    return manifests
+
 if __name__ == "__main__":
-    asyncio.run(main(url))
+    asyncio.run(run_all(url, "../data/{}".format(hashlib.md5(url.encode('utf-8')).hexdigest()), hashlib.md5(url.encode('utf-8')).hexdigest()))
