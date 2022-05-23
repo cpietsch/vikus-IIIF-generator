@@ -31,9 +31,9 @@ from imageCrawler import ImageCrawler
 from cache import Cache
 from helpers import *
 from manifest import Manifest
-from features import FeatureExtractor
-from dimensionReductor import DimensionReductor
-from sharpsheet import Sharpsheet
+# from features import FeatureExtractor
+# from dimensionReductor import DimensionReductor
+# from sharpsheet import Sharpsheet
 
 import pandas as pd
 from pandas.io.json import json_normalize
@@ -44,7 +44,7 @@ pretty.install()
 DATA_DIR = "../data"
 MANIFESTWORKERS = 2
 
-debug = False
+debug = True
 loggingLevel = logging.DEBUG if debug else logging.INFO
 
 logging.basicConfig(
@@ -57,7 +57,7 @@ logging.basicConfig(
 logger = logging.getLogger('rich')
 
 cache = Cache()
-# cache.clear()
+cache.clear()
 
 #url = "https://iiif.wellcomecollection.org/presentation/v3/collections/genres"
 #url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
@@ -76,7 +76,7 @@ async def run_all(url, path, id):
     thumbPath = createFolder("{}/images/thumbs".format(dataPath))
     print(thumbPath)
 
-    manifestCrawler = ManifestCrawler(cache=cache, workers=2)
+    manifestCrawler = ManifestCrawler(cache=cache, numWorkers=2)
     manifest = await manifestCrawler.crawl(manifest)
     manifests = manifest.getFlatList(manifest, type='Canvas')
     #manifests = manifests[:2]
@@ -129,6 +129,8 @@ def create_config_json(iiif_url: str, label: str):
         label = uid
     path = os.path.join(DATA_DIR, uid)
     os.mkdir(path)
+    
+    thumbnailPath = createFolder("{}/images/thumbs".format(path))
     timestamp = int(time.time())
 
     config = {
@@ -136,6 +138,7 @@ def create_config_json(iiif_url: str, label: str):
         "label": label,
         "iiif_url": iiif_url,
         "path": path,
+        "thumbnailPath": thumbnailPath,
         "created": timestamp,
         "updated": timestamp,
         "status": "created"
@@ -146,12 +149,24 @@ def create_config_json(iiif_url: str, label: str):
     return config
 
 @duration
-async def crawl(url):
+async def crawl(url, instance_id, config):
+    thumbPath = config["thumbnailPath"]
+    dataPath = config["path"]
+
     manifest = Manifest(url=url)
     
-    manifestCrawler = ManifestCrawler(cache=cache, workers=MANIFESTWORKERS)
+    manifestCrawler = ManifestCrawler(cache=cache, numWorkers=MANIFESTWORKERS, instanceId = instance_id)
     manifest = await manifestCrawler.crawl(manifest)
     manifests = manifest.getFlatList(manifest, type='Canvas')
+
+    # imageCrawler = ImageCrawler(workers=8, path=thumbPath, instanceId = instance_id)
+    # imageCrawler.addFromManifests(manifests)
+    # images = await imageCrawler.runImageWorkers()
+
+    # metadata = [m.getMetadata() for m in manifests]
+    # dataframe = pd.DataFrame(metadata)
+    # dataframe.to_csv(dataPath + '/metadata.csv', index=False)
+    #print(dataframe)
 
     return manifests
 

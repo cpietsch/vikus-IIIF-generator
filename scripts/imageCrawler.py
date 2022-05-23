@@ -23,6 +23,7 @@ class ImageCrawler:
         self.tasks = []
         self.done = []
         self.overwrite = kwargs.get('overwrite', False)
+        self.instanceId = kwargs.get('instanceId', 'default')
 
     def addFromManifests(self, manifests):
         for manifest in manifests:
@@ -80,7 +81,10 @@ class ImageCrawler:
                     self.logger.debug("{} failed to download {}".format(name, url))
                 
                 # progress.update(task, advance=1)
+                self.cache.xadd(self.instanceId, {'task': 'crawlingImages', 'queue': self.queue.qsize() })	
+
                 self.queue.task_done()
+
                 self.logger.debug(f'{name}: {url} done, {self.queue.qsize()} items left')
 
     async def runImageWorkers(self):

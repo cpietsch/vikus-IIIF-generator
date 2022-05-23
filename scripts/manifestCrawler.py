@@ -11,13 +11,15 @@ from manifest import Manifest
 class ManifestCrawler:
     def __init__(self,*args,**kwargs):
         self.client = kwargs.get('client')
+        self.instanceId = kwargs.get('instanceId', 'default')
         self.limitRecursion = kwargs.get('limitRecursion', False)
         self.cache = kwargs.get('cache', None)
         self.semaphore = kwargs.get('semaphore', asyncio.Semaphore(self.limitRecursion and 10 or 0) )
         self.session = kwargs.get('session')
         self.logger = kwargs.get('logger', logging.getLogger('ManifestCrawler'))
-        self.workers = kwargs.get('workers', 1)
+        self.numWorkers = kwargs.get('numWorkers', 1)
         self.callback = kwargs.get('callback', None)
+        self.completed = 0
 
         self.logger.debug("init crawler")
 
@@ -62,6 +64,10 @@ class ManifestCrawler:
 
                 # Notify the queue that the "work item" has been processed.
                 queue.task_done()
+                self.completed += 1
+                # progress = self.completed / (self.numWorkers * queue.qsize())
+
+                self.cache.xadd(self.instanceId, {'task': 'crawlingManifest', 'queue': queue.qsize(), 'completed': self.completed, 'type': manifest.type })	
             
                 self.logger.debug(f'{name}: {prio} {manifest.label} done with {len(manifest.children)} children, {queue.qsize()} items left')
 
@@ -70,9 +76,10 @@ class ManifestCrawler:
         self.logger.debug("load manifests from {}".format(manifest.id))
         # Create a queue that we will use to store our "workload".
         queue = asyncio.PriorityQueue()
+        self.completed = 0
         
         tasks = []
-        for i in range(self.workers):
+        for i in range(self.numWorkers):
             task = asyncio.create_task(self.manifestWorker(f'worker-{i}', queue))
             tasks.append(task)
 
