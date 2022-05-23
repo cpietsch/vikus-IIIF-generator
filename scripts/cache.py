@@ -18,6 +18,15 @@ class Cache:
 
     def clear(self):
         self.redis.flushdb()
+
+    def xadd(self,key, value):
+        self.redis.xadd(key, value) 
+    
+    def xread(self,key, count = 10, block = False):
+        return self.redis.xread(key, count, block)
+
+    def delete(self, id):
+        self.redis.delete(id)
     
     def saveFeatures(self,id, a):
         # print("saveFeatures", a.shape)
