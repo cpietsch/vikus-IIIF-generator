@@ -18,4 +18,4 @@ fire
 markupsafe==2.0.1
 flask-restful-swagger
 fastapi
-uvicorn
+uvicorn[standard]
