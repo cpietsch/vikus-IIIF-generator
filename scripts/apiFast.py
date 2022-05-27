@@ -20,7 +20,7 @@ import uuid
 import websockets
 
 # from cache import Cache
-from playground import create_config_json, crawl, cache
+from playground import create_config_json, crawlCollection, crawlImages, cache
 
 LOGGER = logging.getLogger(__name__)
 
@@ -96,24 +96,18 @@ def read_instance(instance_id: str):
         config = json.load(f)
     return config
 
-@app.get("/instances/{instance_id}/crawl")
-async def crawlManifest(instance_id: str):
+@app.get("/instances/{instance_id}/crawlCollection")
+async def crawl_collection(instance_id: str):
     config = read_instance(instance_id)
     # print(config)
     # if config["status"] != "created":
-    #     return {"error": "Instance {} is alr7eady crawled".format(instance_id)}, 404
+    #     return {"error": "Instance {} is already crawled".format(instance_id)}, 404
     
     # config["status"] = "crawling"
     # with open(os.path.join(config["path"], "instance.json"), "w") as f:
     #     f.write(json.dumps(config, indent=4))
 
-    manifests = await crawl(config["iiif_url"], instance_id, config)
-
-    InstanceManager[instance_id] = {
-        "config": config,
-        "manifests": manifests,
-        "status": "crawled",
-    }
+    manifests = await crawlCollection(config["iiif_url"], instance_id)
 
     # config["status"] = "crawled"
     # with open(os.path.join(config["path"], "instance.json"), "w") as f:
@@ -121,18 +115,51 @@ async def crawlManifest(instance_id: str):
 
     # return InstanceManager[instance_id]
 
-    config["status"] = "crawled"
-    config["images"] = len(manifests)
+    config["status"] = "crawledCollection"
+    config["manifests"] = len(manifests)
     with open(os.path.join(config["path"], "instance.json"), "w") as f:
         f.write(json.dumps(config, indent=4))
+
+    InstanceManager[instance_id] = {
+        "config": config,
+        "manifests": manifests,
+        "status": "crawledCollection",
+    }
 
     return config
 
 @app.get("/instances/{instance_id}/crawlImages")
-async def crawlImages(instance_id: str):
-    config = read_instance(instance_id)
+async def crawl_images(instance_id: str):
+    if instance_id not in InstanceManager:
+        return {"error": "Instance {} doesn't exist".format(instance_id)}, 404
+    config = InstanceManager[instance_id]["config"]
+    if config["status"] != "crawledCollection":
+        return {"error": "Instance {} is not crawled".format(instance_id)}, 404
+    # config["status"] = "crawlingImages"
+    # with open(os.path.join(config["path"], "instance.json"), "w") as f:
+    #     f.write(json.dumps(config, indent=4))
 
     manifests = InstanceManager[instance_id]["manifests"]
+
+    images = await crawlImages(manifests, instance_id, config["thumbnailPath"])
+    print(images) 
+
+
+    config["status"] = "crawledImages"
+    config["images"] = len(images)
+    with open(os.path.join(config["path"], "instance.json"), "w") as f:
+        f.write(json.dumps(config, indent=4))
+
+    InstanceManager[instance_id] = {
+        "config": config,
+        "images": images,
+        "manifests": manifests,
+        "status": "crawledImages",
+    }
+
+    return config
+
+
 
 @app.delete("/instances/{instance_id}")
 def delete_instance(instance_id: str):
@@ -176,7 +203,7 @@ async def websocket_endpoint(websocket: WebSocket, instance_id: str):
             resp = cache.xread({instance_id: last_id}, count=100, block=sleep_ms)
             
             if resp:
-                key, messages = resp[0]  # :(
+                key, messages = resp[0]
                 last_id, data = messages[0]
 
                 ddata_dict = {k.decode("utf-8"): data[k].decode("utf-8") for k in data}

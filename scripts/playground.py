@@ -44,7 +44,7 @@ pretty.install()
 DATA_DIR = "../data"
 MANIFESTWORKERS = 2
 
-debug = True
+debug = False
 loggingLevel = logging.DEBUG if debug else logging.INFO
 
 logging.basicConfig(
@@ -149,26 +149,46 @@ def create_config_json(iiif_url: str, label: str):
     return config
 
 @duration
-async def crawl(url, instance_id, config):
-    thumbPath = config["thumbnailPath"]
-    dataPath = config["path"]
-
+async def crawlCollection(url, instanceId):
     manifest = Manifest(url=url)
-    
-    manifestCrawler = ManifestCrawler(cache=cache, numWorkers=MANIFESTWORKERS, instanceId = instance_id)
+    manifestCrawler = ManifestCrawler(
+        cache=cache,
+        numWorkers=MANIFESTWORKERS,
+        instanceId = instanceId
+    )
     manifest = await manifestCrawler.crawl(manifest)
     manifests = manifest.getFlatList(manifest, type='Canvas')
 
-    # imageCrawler = ImageCrawler(workers=8, path=thumbPath, instanceId = instance_id)
-    # imageCrawler.addFromManifests(manifests)
-    # images = await imageCrawler.runImageWorkers()
-
-    # metadata = [m.getMetadata() for m in manifests]
-    # dataframe = pd.DataFrame(metadata)
-    # dataframe.to_csv(dataPath + '/metadata.csv', index=False)
-    #print(dataframe)
-
     return manifests
 
+@duration
+async def crawlImages(manifests, instanceId, thumbPath):
+    imageCrawler = ImageCrawler(
+        workers=3,
+        path=thumbPath,
+        instanceId = instanceId,
+        cache=cache
+    )
+    imageCrawler.addFromManifests(manifests)
+    images = await imageCrawler.runImageWorkers()
+
+    return images
+
+@duration
+async def saveMetadata(manifests, path):
+    metadata = [m.getMetadata() for m in manifests]
+    dataframe = pd.DataFrame(metadata)
+    dataframe.to_csv(path + '/metadata.csv', index=False)
+
+    return dataframe
+
+async def test(url, path, instanceId):
+    manifests = await crawlCollection(url, instanceId)
+    print(manifests)
+    images = await crawlImages(manifests, instanceId, path)
+    print(images)
+
+    
+
 if __name__ == "__main__":
-    asyncio.run(run_all(url, "../data/{}".format(hashlib.md5(url.encode('utf-8')).hexdigest()), hashlib.md5(url.encode('utf-8')).hexdigest()))
+    asyncio.run(test(url, "../data/{}".format(hashlib.md5(url.encode('utf-8')).hexdigest()), "test"))
