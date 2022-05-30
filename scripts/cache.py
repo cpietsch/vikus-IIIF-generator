@@ -1,56 +1,44 @@
 import logging
-import redis
+import aioredis
 import asyncio
-import requests, json, os, time, logging, sys
+import requests
+import json
+import os
+import time
+import logging
+import sys
 import numpy as np
 import struct
 
+
 class Cache:
     def __init__(self, *args, **kwargs):
-        self.redis = kwargs.get('redis', redis.Redis(host='redis', port=6379))
+        self.redis = kwargs.get(
+            'redis', aioredis.from_url("redis://redis"))
         self.logger = kwargs.get('logger', logging.getLogger('cache'))
-    
-    def get(self, id):
-        return self.redis.get(id)
+        self.psub = self.redis.pubsub()
 
-    def set(self, id, data):
-        self.redis.set(id, data)
-
-    def clear(self):
-        self.redis.flushdb()
-
-    def xadd(self,key, value):
-        self.redis.xadd(key, value) 
-    
-    def xread(self,key, count = 10, block = False):
-        return self.redis.xread(key, count, block)
-
-    def delete(self, id):
-        self.redis.delete(id)
-    
-    def saveFeatures(self,id, a):
+    async def saveFeatures(self, id, a):
         # print("saveFeatures", a.shape)
         encoded = a.tobytes()
         # Store encoded data in Redis
-        self.redis.set("f{}".format(id),encoded)
-        return
+        return await self.redis.set("f{}".format(id), encoded)
 
-    def getFeatures(self,id):
-        """Retrieve Numpy array from Redis key 'n'"""
-        encoded = self.redis.get("f{}".format(id))
+    async def getFeatures(self, id):
+        encoded = await self.redis.get("f{}".format(id))
         if encoded is None:
             return None
-        a = np.frombuffer(encoded, dtype=np.float32, count=512)
-        # print("getFeatures", a.shape) 
-        return a
+        features = np.frombuffer(encoded, dtype=np.float32, count=512)
+        # print("getFeatures", a.shape)
+        return features
 
-    async def getJsonFromUrl(self,url, session = None, retries = 5):
+    async def getJsonFromUrl(self, url, session=None, retries=5):
         for i in range(retries):
             try:
                 if session is None:
                     response = requests.get(url).text
                     return text.encode('utf-8')
-                
+
                 async with session.get(url) as response:
                     text = await response.text(encoding='utf-8')
                     return text
@@ -61,19 +49,29 @@ class Cache:
                 await asyncio.sleep(1)
         return None
 
-
-    async def getJson(self, url, session = None, retries = 5):
+    async def getJson(self, url, session=None, retries=5):
         self.logger.debug("get cache for {}".format(url))
-        if self.redis.exists(url):
+        if await self.redis.exists(url):
             self.logger.debug("cache hit")
-            cached = self.redis.get(url)
+            cached = await self.redis.get(url)
             return json.loads(cached)
         else:
             self.logger.debug("cache miss")
             data = await self.getJsonFromUrl(url, session, retries)
             if data is not None:
                 self.logger.debug("cache set")
-                self.redis.set(url, data)
+                await self.redis.set(url, data)
                 return json.loads(data)
             else:
                 return None
+
+
+async def main():
+    cache = Cache()
+
+    await cache.redis.set('test', 'test')
+    print(await cache.redis.get('test'))
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

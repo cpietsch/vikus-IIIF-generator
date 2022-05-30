@@ -17,5 +17,8 @@ yale-dhlab-rasterfairy
 fire
 markupsafe==2.0.1
 flask-restful-swagger
-fastapi
+fastapi[all]
 uvicorn[standard]
+aioredis
+se-starlette
+fastapi-plugins

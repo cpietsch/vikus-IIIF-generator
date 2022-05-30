@@ -57,7 +57,7 @@ logging.basicConfig(
 logger = logging.getLogger('rich')
 
 cache = Cache()
-cache.clear()
+# cache.clear()
 
 #url = "https://iiif.wellcomecollection.org/presentation/v3/collections/genres"
 #url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
@@ -66,6 +66,7 @@ cache.clear()
 #url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Stickers"
 url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Watercolors"
 #url = "https://iiif.bodleian.ox.ac.uk/iiif/manifest/e32a277e-91e2-4a6d-8ba6-cc4bad230410.json"
+
 
 @duration
 async def run_all(url, path, id):
@@ -84,7 +85,7 @@ async def run_all(url, path, id):
     metadata = [m.getMetadata() for m in manifests]
     dataframe = pd.DataFrame(metadata)
     dataframe.to_csv(dataPath + '/metadata.csv', index=False)
-    #print(dataframe)
+    # print(dataframe)
 
     imageCrawler = ImageCrawler(workers=8, path=thumbPath)
     imageCrawler.addFromManifests(manifests)
@@ -123,13 +124,14 @@ async def run_all(url, path, id):
         'path': path,
     }
 
+
 def create_config_json(iiif_url: str, label: str):
     uid = str(uuid.uuid4())
     if label is None:
         label = uid
     path = os.path.join(DATA_DIR, uid)
     os.mkdir(path)
-    
+
     thumbnailPath = createFolder("{}/images/thumbs".format(path))
     timestamp = int(time.time())
 
@@ -148,31 +150,34 @@ def create_config_json(iiif_url: str, label: str):
         f.write(json.dumps(config, indent=4))
     return config
 
+
 @duration
 async def crawlCollection(url, instanceId):
     manifest = Manifest(url=url)
     manifestCrawler = ManifestCrawler(
         cache=cache,
         numWorkers=MANIFESTWORKERS,
-        instanceId = instanceId
+        instanceId=instanceId
     )
     manifest = await manifestCrawler.crawl(manifest)
     manifests = manifest.getFlatList(manifest, type='Canvas')
 
     return manifests
 
+
 @duration
 async def crawlImages(manifests, instanceId, thumbPath):
     imageCrawler = ImageCrawler(
         workers=3,
         path=thumbPath,
-        instanceId = instanceId,
+        instanceId=instanceId,
         cache=cache
     )
     imageCrawler.addFromManifests(manifests)
     images = await imageCrawler.runImageWorkers()
 
     return images
+
 
 @duration
 async def saveMetadata(manifests, path):
@@ -182,13 +187,14 @@ async def saveMetadata(manifests, path):
 
     return dataframe
 
+
 async def test(url, path, instanceId):
     manifests = await crawlCollection(url, instanceId)
     print(manifests)
-    images = await crawlImages(manifests, instanceId, path)
-    print(images)
+    # images = await crawlImages(manifests, instanceId, path)
+    # print(images)
 
-    
 
 if __name__ == "__main__":
-    asyncio.run(test(url, "../data/{}".format(hashlib.md5(url.encode('utf-8')).hexdigest()), "test"))
+    asyncio.run(test(
+        url, "../data/{}".format(hashlib.md5(url.encode('utf-8')).hexdigest()), "test"))
