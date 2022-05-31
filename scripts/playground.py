@@ -14,6 +14,7 @@ import aiohttp
 import random
 import traceback
 import hashlib
+import randomname
 
 import numpy as np
 
@@ -42,6 +43,7 @@ import uuid
 pretty.install()
 
 DATA_DIR = "../data"
+DATA_IMAGES_DIR = "../data/images"
 MANIFESTWORKERS = 2
 
 debug = False
@@ -126,7 +128,8 @@ async def run_all(url, path, id):
 
 
 def create_config_json(iiif_url: str, label: str):
-    uid = str(uuid.uuid4())
+    # uid = str(uuid.uuid4())
+    uid = randomname.get_name()
     if label is None:
         label = uid
     path = os.path.join(DATA_DIR, uid)
@@ -166,10 +169,10 @@ async def crawlCollection(url, instanceId):
 
 
 @duration
-async def crawlImages(manifests, instanceId, thumbPath):
+async def crawlImages(manifests, instanceId):
     imageCrawler = ImageCrawler(
         workers=3,
-        path=thumbPath,
+        path=DATA_IMAGES_DIR,
         instanceId=instanceId,
         cache=cache
     )

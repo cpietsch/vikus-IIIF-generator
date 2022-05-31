@@ -3,9 +3,10 @@ import asyncio
 from imp import reload
 import json
 import uuid
+from warnings import catch_warnings
 from sklearn.metrics import consensus_score
 import uvicorn
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from sse_starlette.sse import EventSourceResponse
@@ -129,8 +130,8 @@ async def crawl_images(instance_id: str):
 
     manifests = InstanceManager[instance_id]["manifests"]
 
-    images = await crawlImages(manifests, instance_id, config["thumbnailPath"])
-    print(images)
+    images = await crawlImages(manifests, instance_id)
+    # print(images)
 
     config["status"] = "crawledImages"
     config["images"] = len(images)
@@ -164,25 +165,40 @@ async def create_instance(url: str, label: str = None):
 
 
 @app.get("/instances/{instance_id}/events")
-async def stream(instance_id: str = "default"):
-    return EventSourceResponse(subscribe(instance_id))
+async def stream(req: Request, instance_id: str = "default"):
+    return EventSourceResponse(subscribe( req, instance_id))
 
-
-async def subscribe(channel: str):
+async def subscribe(req: Request, instance_id: str = "default"):
     try:
         async with cache.psub as p:
-            await p.subscribe(channel)
-            yield {"event": "open", "data": "subscribed to {}".format(channel)}
+            print("start subscribe")
+            try:
+                await p.subscribe(instance_id)
+            except Exception as e:
+                print("subscribe error", e)
+
+            print("subscribed")
+            yield {"event": "open", "data": "subscribed to {}".format(instance_id)}
             while True:
+                disconnected = await req.is_disconnected()
+                if disconnected:
+                    print(f"Disconnecting client {req.client}")
+                    break
                 message = await p.get_message(ignore_subscribe_messages=True)
+                print("message")
                 if message is not None:
                     # print(message)
                     yield {"event": "message", "data": message["data"].decode("utf-8")}
                 await asyncio.sleep(0.01)
-
-    except Exception as e:
-        print(e)
-        pass
+    except asyncio.CancelledError as e:
+    # except Exception as e:
+        print(f"Cancelled {e}")
+        
+    finally:
+        print(f"Closing client {req.client}")
+        
+    await p.unsubscribe(instance_id)
+    yield {"event": "close", "data": "unsubscribed from {}".format(instance_id)}
 
         # finally:
         #     yield {"event": "ping", "data": "ping"}
@@ -210,4 +226,4 @@ async def reader(channel):
             pass
 
 if __name__ == "__main__":
-    uvicorn.run("apiFast:app", host="0.0.0.0", port=5000, reload=True)
+    uvicorn.run("apiFast:app", host="0.0.0.0", port=5000, reload=True, log_level="debug")

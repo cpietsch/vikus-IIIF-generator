@@ -24,6 +24,9 @@ class ImageCrawler:
         self.done = []
         self.overwrite = kwargs.get('overwrite', False)
         self.instanceId = kwargs.get('instanceId', 'default')
+        
+        if not os.path.exists(self.path):
+            os.makedirs(self.path)
 
     def addFromManifests(self, manifests):
         for manifest in manifests:
@@ -81,7 +84,8 @@ class ImageCrawler:
                     self.logger.debug("{} failed to download {}".format(name, url))
                 
                 # progress.update(task, advance=1)
-                self.cache.xadd(self.instanceId, {'task': 'crawlingImages', 'queue': self.queue.qsize() })	
+                # self.cache.xadd(self.instanceId, {'task': 'crawlingImages', 'queue': self.queue.qsize() })	
+                await self.cache.redis.publish(self.instanceId, json.dumps({'task': 'crawlingImages', 'queue': self.queue.qsize() }))
 
                 self.queue.task_done()
 

@@ -20,5 +20,6 @@ flask-restful-swagger
 fastapi[all]
 uvicorn[standard]
 aioredis
-se-starlette
+sse-starlette
 fastapi-plugins
+randomname
