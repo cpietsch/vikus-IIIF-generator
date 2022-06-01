@@ -15,11 +15,10 @@ umap-learn
 pandas
 yale-dhlab-rasterfairy
 fire
-markupsafe==2.0.1
+markupsafe
 flask-restful-swagger
 fastapi[all]
 uvicorn[standard]
 aioredis
 sse-starlette
-fastapi-plugins
 randomname

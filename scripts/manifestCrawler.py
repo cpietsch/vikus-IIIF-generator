@@ -76,9 +76,13 @@ class ManifestCrawler:
                 self.completed += 1
                 # progress = self.completed / (self.numWorkers * queue.qsize())
 
-                # self.cache.xadd(self.instanceId, {'task': 'crawlingManifest', 'queue': queue.qsize(), 'completed': self.completed, 'type': manifest.type })
-                await self.cache.redis.publish(self.instanceId, json.dumps(
-                    {'task': 'crawlingManifest', 'queue': queue.qsize(), 'completed': self.completed, 'type': manifest.type}))
+                await self.cache.redis.xadd(self.instanceId, {
+                    'task': 'crawlingManifest',
+                    'queue': queue.qsize(),
+                    'completed': self.completed,
+                    'type': manifest.type
+                })
+                # await self.cache.redis.publish(self.instanceId, json.dumps({'task': 'crawlingManifest', 'queue': queue.qsize(), 'completed': self.completed, 'type': manifest.type}))
 
                 self.logger.debug(
                     f'{name}: {prio} {manifest.label} done with {len(manifest.children)} children, {queue.qsize()} items left')

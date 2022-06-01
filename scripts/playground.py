@@ -46,7 +46,7 @@ DATA_DIR = "../data"
 DATA_IMAGES_DIR = "../data/images"
 MANIFESTWORKERS = 2
 
-debug = False
+debug = True
 loggingLevel = logging.DEBUG if debug else logging.INFO
 
 logging.basicConfig(

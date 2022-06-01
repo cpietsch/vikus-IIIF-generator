@@ -3,6 +3,7 @@ import os
 import time
 import asyncio
 
+
 def duration(func):
     async def helper(func, *args, **kwargs):
         if asyncio.iscoroutinefunction(func):
@@ -31,4 +32,4 @@ def createFolder(directory):
         # return absolute path
         return os.path.abspath(directory)
     except OSError:
-        print ('Error: Creating directory. ' +  directory)
+        print('Error: Creating directory. ' + directory)
