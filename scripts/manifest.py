@@ -79,7 +79,7 @@ class Manifest:
         except:
             self.logger.warning("no image found for {}".format(self))
 
-    def getLargeImageUrl(self, max = 4096):
+    def getLargeImageUrl(self, max=4096):
         try:
             body = self.data.get('items')[0].get('items')[0].get('body')
             service = body.get('service')[0]
@@ -92,12 +92,12 @@ class Manifest:
                         ratio = max / width
                     else:
                         ratio = max / height
-                    
+
                     return "{}/full/{},{}/0/default.jpg".format(
                         service.get("@id"),
                         int(width * ratio),
                         int(height * ratio)
-                    )  
+                    )
                 return "{}/full/full/0/default.jpg".format(
                     service.get("@id"),
                 )
@@ -127,7 +127,12 @@ class Manifest:
                 self.logger.warning("no image url found for {}".format(item))
         return urls
 
-    def getFlatList(self, manifest, type='Manifest', list=[]):
+    def getFlatList(self, manifest=None, type='Manifest', list=None):
+        if list is None:
+            list = []
+        if manifest is None:
+            manifest = self
+
         if manifest.type == type:
             list.append(manifest)
 
@@ -199,10 +204,10 @@ async def main():
 
     # url = "https://iiif.dl.itc.u-tokyo.ac.jp/iiif/2/collection/c-1"
     url = "https://iiif.wellcomecollection.org/presentation/b2488473x"
-    #url = "https://iiif.wellcomecollection.org/presentation/b16894376" # behind auth, non public
+    # url = "https://iiif.wellcomecollection.org/presentation/b16894376" # behind auth, non public
 
     #url = "https://iiif.bodleian.ox.ac.uk/iiif/manifest/e32a277e-91e2-4a6d-8ba6-cc4bad230410.json"
-    #data = await cache.getJson(url)
+    # data = await cache.getJson(url)
     data = await cache.getJsonFromUrl(url)
 
     manifest = Manifest(url=url)

@@ -24,7 +24,7 @@ import shutil
 import uuid
 
 # from cache import Cache
-from playground import create_config_json, crawlCollection, crawlImages, cache
+from playground import create_config_json, crawlCollection, crawlImages, makeMetadata, makeSpritesheets, saveConfig, makeFeatures, makeUmap, cache
 from connectionManager import ConnectionManager
 
 LOGGER = logging.getLogger(__name__)
@@ -88,32 +88,20 @@ def read_instance(instance_id: str):
 @app.get("/instances/{instance_id}/crawlCollection")
 async def crawl_collection(instance_id: str):
     config = read_instance(instance_id)
-    # print(config)
-    # if config["status"] != "created":
-    #     return {"error": "Instance {} is already crawled".format(instance_id)}, 404
-
-    # config["status"] = "crawling"
-    # with open(os.path.join(config["path"], "instance.json"), "w") as f:
-    #     f.write(json.dumps(config, indent=4))
 
     manifests = await crawlCollection(config["iiif_url"], instance_id)
 
-    # config["status"] = "crawled"
-    # with open(os.path.join(config["path"], "instance.json"), "w") as f:
-    #     f.write(json.dumps(config, indent=4))
-
-    # return InstanceManager[instance_id]
-
     config["status"] = "crawledCollection"
     config["manifests"] = len(manifests)
-    with open(os.path.join(config["path"], "instance.json"), "w") as f:
-        f.write(json.dumps(config, indent=4))
+    saveConfig(config)
 
-    InstanceManager[instance_id] = {
-        "config": config,
-        "manifests": manifests,
+    if instance_id not in InstanceManager:
+        InstanceManager[instance_id] = {"config": config}
+
+    InstanceManager[instance_id].update({
         "status": "crawledCollection",
-    }
+        "manifests": manifests
+    })
 
     return config
 
@@ -121,30 +109,94 @@ async def crawl_collection(instance_id: str):
 @app.get("/instances/{instance_id}/crawlImages")
 async def crawl_images(instance_id: str):
     if instance_id not in InstanceManager:
-        return {"error": "Instance {} doesn't exist".format(instance_id)}, 404
+        await crawl_collection(instance_id)
+
     config = InstanceManager[instance_id]["config"]
-    if config["status"] != "crawledCollection":
-        return {"error": "Instance {} is not crawled".format(instance_id)}, 404
-    # config["status"] = "crawlingImages"
-    # with open(os.path.join(config["path"], "instance.json"), "w") as f:
-    #     f.write(json.dumps(config, indent=4))
 
     manifests = InstanceManager[instance_id]["manifests"]
-
     images = await crawlImages(manifests, instance_id)
-    # print(images)
 
     config["status"] = "crawledImages"
     config["images"] = len(images)
-    with open(os.path.join(config["path"], "instance.json"), "w") as f:
-        f.write(json.dumps(config, indent=4))
+    saveConfig(config)
 
-    InstanceManager[instance_id] = {
-        "config": config,
-        "images": images,
-        "manifests": manifests,
+    InstanceManager[instance_id].update({
         "status": "crawledImages",
-    }
+        "images": images
+    })
+
+    return config
+
+
+@app.get("/instances/{instance_id}/makeMetadata")
+async def metadata(instance_id: str):
+    if instance_id not in InstanceManager:
+        await crawl_collection(instance_id)
+
+    config = InstanceManager[instance_id]["config"]
+    if config["manifests"] == 0:
+        return {"error": "Instance {} doesn't have any manifests".format(instance_id)}, 404
+
+    manifests = InstanceManager[instance_id]["manifests"]
+    path = config["path"]
+    metadata = await makeMetadata(manifests, instance_id, path)
+
+    config["status"] = "metadata"
+    config["metadataFile"] = metadata["file"]
+
+    return config
+
+
+@app.get("/instances/{instance_id}/makeSpritesheets")
+async def spritesheets(instance_id: str):
+    if instance_id not in InstanceManager:
+        await crawl_images(instance_id)
+
+    config = InstanceManager[instance_id]["config"]
+    images = InstanceManager[instance_id]["images"]
+    files = [os.path.abspath(path) for (id, path) in images]
+    path = config["thumbnailPath"]
+    await makeSpritesheets(files, instance_id, path)
+
+    config["status"] = "spritesheets"
+
+    return config
+
+
+@app.get("/instances/{instance_id}/makeFeatures")
+async def getFeatures(instance_id: str):
+    if instance_id not in InstanceManager:
+        await crawl_images(instance_id)
+
+    config = InstanceManager[instance_id]["config"]
+    images = InstanceManager[instance_id]["images"]
+
+    features = await makeFeatures(images, instance_id)
+
+    InstanceManager[instance_id].update({
+        "status": "features",
+        "features": features
+    })
+    config["status"] = "features"
+
+    return config
+
+
+@app.get("/instances/{instance_id}/makeUmap")
+async def umap(instance_id: str):
+    if instance_id not in InstanceManager:
+        await getFeatures(instance_id)
+
+    config = InstanceManager[instance_id]["config"]
+    images = InstanceManager[instance_id]["images"]
+    features = InstanceManager[instance_id]["features"]
+
+    path = config["path"]
+    ids = [id for (id, path) in images]
+
+    await makeUmap(features, instance_id, path, ids)
+
+    config["status"] = "umap"
 
     return config
 
@@ -192,12 +244,12 @@ async def websocket_endpoint(websocket: WebSocket, instance_id: str):
 
                 ddata_dict = {
                     k.decode("utf-8"): data[k].decode("utf-8") for k in data}
-                print(ddata_dict)
+                # print(ddata_dict)
                 # print(resp)
                 await manager.broadcast(ddata_dict)
             else:
                 # print("no data")
-                await asyncio.sleep(0.1)
+                await asyncio.sleep(0.01)
     except Exception as e:
         manager.disconnect(websocket)
         print("Disconnected", instance_id)

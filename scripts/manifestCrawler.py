@@ -27,6 +27,7 @@ class ManifestCrawler:
             'logger', logging.getLogger('ManifestCrawler'))
         self.numWorkers = kwargs.get('numWorkers', 1)
         self.callback = kwargs.get('callback', None)
+        self.size = 0
         self.completed = 0
 
         self.logger.debug("init crawler")
@@ -68,29 +69,37 @@ class ManifestCrawler:
                             continue
 
                         if child.type == 'Collection' or child.type == 'Manifest':
+                            # print("{} added {}".format(
+                            #     self.completed, queue.qsize()))
+                            self.size += 1
                             queue.put_nowait(
                                 (prio + 1 + random.uniform(0, 1), child))
 
-                # Notify the queue that the "work item" has been processed.
-                queue.task_done()
                 self.completed += 1
-                # progress = self.completed / (self.numWorkers * queue.qsize())
+
+                progress = self.completed / self.size
 
                 await self.cache.redis.xadd(self.instanceId, {
+                    'progress': progress,
                     'task': 'crawlingManifest',
                     'queue': queue.qsize(),
-                    'completed': self.completed,
-                    'type': manifest.type
+                    'size': self.size,
+                    'type': manifest.type,
+                    'completed': self.completed
                 })
                 # await self.cache.redis.publish(self.instanceId, json.dumps({'task': 'crawlingManifest', 'queue': queue.qsize(), 'completed': self.completed, 'type': manifest.type}))
 
                 self.logger.debug(
                     f'{name}: {prio} {manifest.label} done with {len(manifest.children)} children, {queue.qsize()} items left')
 
+                # Notify the queue that the "work item" has been processed.
+                queue.task_done()
+
     async def crawl(self, manifest):
         self.logger.debug("load manifests from {}".format(manifest.id))
         # Create a queue that we will use to store our "workload".
         queue = asyncio.PriorityQueue()
+        self.size = 1
         self.completed = 0
 
         tasks = []
@@ -115,5 +124,14 @@ class ManifestCrawler:
         except Exception as e:
             self.logger.error(e)
         self.logger.debug("load manifests done")
+
+        await self.cache.redis.xadd(self.instanceId, {
+            'progress': 1,
+            'task': 'crawlingManifest',
+            'queue': queue.qsize(),
+            'size': self.size,
+            'completed': self.completed,
+            'type': 'done'
+        })
 
         return manifest

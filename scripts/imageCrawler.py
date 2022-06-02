@@ -31,6 +31,8 @@ class ImageCrawler:
         self.done = []
         self.overwrite = kwargs.get('overwrite', False)
         self.instanceId = kwargs.get('instanceId', 'default')
+        self.size = 0
+        self.completed = 0
 
         if not os.path.exists(self.path):
             os.makedirs(self.path)
@@ -44,6 +46,7 @@ class ImageCrawler:
         id = manifest.getId()
         self.logger.debug("adding {}".format(thumbnailUrl))
         if thumbnailUrl is not None:
+            self.size += 1
             self.queue.put_nowait((id, thumbnailUrl))
 
     def makeFilename(self, id):
@@ -91,18 +94,29 @@ class ImageCrawler:
                     self.logger.debug(
                         "{} failed to download {}".format(name, url))
 
+                self.completed += 1
+                progress = self.completed / self.size
                 # progress.update(task, advance=1)
-                await self.cache.redis.xadd(self.instanceId, {'task': 'crawlingImages', 'queue': self.queue.qsize()})
+                await self.cache.redis.xadd(self.instanceId, {
+                    'progress': progress,
+                    'size': self.size,
+                    'task': 'crawlingImages',
+                    'queue': self.queue.qsize(),
+                    'completed': self.completed
+                })
                 # await self.cache.redis.publish(self.instanceId, json.dumps({'task': 'crawlingImages', 'queue': self.queue.qsize() }))
-
-                self.queue.task_done()
 
                 self.logger.debug(
                     f'{name}: {url} done, {self.queue.qsize()} items left')
 
+                self.queue.task_done()
+
     async def runImageWorkers(self):
         self.logger.debug("runImageWorkers")
         # Create a queue that we will use to store our "workload".
+        self.done = []
+        self.size = self.queue.qsize()
+        self.completed = 0
 
         for i in range(self.workers):
             task = asyncio.create_task(self.imageWorker(f'worker-{i}'))
@@ -118,6 +132,15 @@ class ImageCrawler:
 
         # Wait until all worker tasks are cancelled.
         await asyncio.gather(*self.tasks, return_exceptions=True)
+
+        await self.cache.redis.xadd(self.instanceId, {
+            'progress': 1,
+            'size': self.size,
+            'task': 'crawlingImages',
+            'queue': self.queue.qsize(),
+            'completed': self.completed,
+            'status': 'done'
+        })
         self.logger.debug("load images done")
 
         return self.done

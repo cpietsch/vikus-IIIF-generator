@@ -34,7 +34,7 @@ from helpers import *
 from manifest import Manifest
 # from features import FeatureExtractor
 # from dimensionReductor import DimensionReductor
-# from sharpsheet import Sharpsheet
+from sharpsheet import Sharpsheet
 
 import pandas as pd
 from pandas.io.json import json_normalize
@@ -46,7 +46,7 @@ DATA_DIR = "../data"
 DATA_IMAGES_DIR = "../data/images"
 MANIFESTWORKERS = 2
 
-debug = True
+debug = False
 loggingLevel = logging.DEBUG if debug else logging.INFO
 
 logging.basicConfig(
@@ -162,8 +162,8 @@ async def crawlCollection(url, instanceId):
         numWorkers=MANIFESTWORKERS,
         instanceId=instanceId
     )
-    manifest = await manifestCrawler.crawl(manifest)
-    manifests = manifest.getFlatList(manifest, type='Canvas')
+    await manifestCrawler.crawl(manifest)
+    manifests = manifest.getFlatList(type='Canvas')
 
     return manifests
 
@@ -183,12 +183,42 @@ async def crawlImages(manifests, instanceId):
 
 
 @duration
-async def saveMetadata(manifests, path):
+async def makeMetadata(manifests, instanceId, path):
+    file = path + '/metadata.csv'
     metadata = [m.getMetadata() for m in manifests]
     dataframe = pd.DataFrame(metadata)
-    dataframe.to_csv(path + '/metadata.csv', index=False)
+    dataframe.to_csv(file, index=False)
 
-    return dataframe
+    return {'file': file, 'dataframe': dataframe}
+
+
+@duration
+async def makeSpritesheets(files, instanceId, path):
+    spriter = Sharpsheet(logger=logger)
+    await spriter.generate(files=files, outputPath=path)
+
+
+@duration
+async def makeFeatures(files, instanceId):
+    print("Extracting features import")
+    from featureExtractor import FeatureExtractor
+    print("Extracting features")
+
+    featureExtractor = FeatureExtractor(
+        "openai/clip-vit-base-patch32", "cpu", cache=cache, overwrite=False, instanceId=instanceId)
+    featureExtractor.load_model()
+    features = await featureExtractor.concurrent_extract_features(files)
+    print(features)
+    return features
+
+
+@duration
+async def makeUmap(features, instanceId, path, ids, n_neighbors=15, min_dist=0.2):
+    from dimensionReductor import DimensionReductor
+    umaper = DimensionReductor(n_neighbors=n_neighbors, min_dist=min_dist)
+    embedding = umaper.fit_transform(features)
+    umaper.saveToCsv(embedding, path, ids)
+    return path
 
 
 async def test(url, path, instanceId):
@@ -196,6 +226,11 @@ async def test(url, path, instanceId):
     print(manifests)
     # images = await crawlImages(manifests, instanceId, path)
     # print(images)
+
+
+def saveConfig(config):
+    with open(os.path.join(config['path'], "instance.json"), "w") as f:
+        f.write(json.dumps(config, indent=4))
 
 
 if __name__ == "__main__":
