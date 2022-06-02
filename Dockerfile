@@ -24,7 +24,13 @@ EXPOSE $PORT
 # Using Debian, as root
 RUN curl -fsSL https://deb.nodesource.com/setup_17.x | bash -
 RUN apt-get install -y nodejs
-RUN npm install -g sharpsheet
+# RUN npm install -g sharpsheet
+# clone github repo and install
+RUN git clone https://github.com/cpietsch/sharpsheet
+RUN cd sharpsheet
+RUN npm install
+
+RUN cd /scripts
 
 #CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app
 
