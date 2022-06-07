@@ -1,0 +1,6 @@
+[submodule "vikus-docker-frontend"]
+	path = vikus-docker-frontend
+	url = https://github.com/cpietsch/vikus-docker-frontend
+[submodule "sharpsheet"]
+	path = sharpsheet
+	url = https://github.com/cpietsch/sharpsheet
