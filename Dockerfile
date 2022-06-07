@@ -7,7 +7,7 @@ ENV PYTHONUNBUFFERED True
 #ENV APP_HOME /app
 RUN mkdir /scripts
 WORKDIR /scripts
-#COPY . ./
+#COPY . ./scripts
 
 #RUN apk add --no-cache gcc musl-dev linux-headers
 
@@ -24,13 +24,15 @@ EXPOSE $PORT
 # Using Debian, as root
 RUN curl -fsSL https://deb.nodesource.com/setup_17.x | bash -
 RUN apt-get install -y nodejs
-# RUN npm install -g sharpsheet
+RUN npm install -g sharpsheet
 # clone github repo and install
-RUN git clone https://github.com/cpietsch/sharpsheet
-RUN cd sharpsheet
-RUN npm install
+#RUN git clone https://github.com/cpietsch/sharpsheet; cd sharpsheet; npm install; cd ..
+# WORKDIR /sharpsheet
+# RUN npm install
+# WORKDIR /frontend
+# RUN npm install
 
-RUN cd /scripts
+WORKDIR /scripts
 
 #CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app
 
