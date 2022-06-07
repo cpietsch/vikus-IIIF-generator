@@ -18,11 +18,15 @@ class Sharpsheet:
         dimension = kwargs.get('dimension', '2048')
         outputPath = kwargs.get('outputPath', None)
 
-        command = ['/scripts/sharpsheet/bin/sharpsheet', files.__str__(),
-                   '--outputPath', outputPath,
-                   '--outputFormat', format,
-                   '--outputQuality', quality.__str__(),
-                   '--sheetDimension', dimension.__str__()]
+        command = [
+            #'/scripts/sharpsheet/bin/sharpsheet',
+            'sharpsheet',
+            files.__str__(),
+            '--outputPath', outputPath,
+            '--outputFormat', format,
+            '--outputQuality', quality.__str__(),
+            '--sheetDimension', dimension.__str__()
+        ]
 
         print("command")
         print(command.__str__())
