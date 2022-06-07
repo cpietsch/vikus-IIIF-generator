@@ -50,8 +50,18 @@ class ImageCrawler:
             self.queue.put_nowait((id, thumbnailUrl))
 
     def makeFilename(self, id):
+        # id is an hash
         filename = id + ".jpg"
-        filepath = os.path.join(self.path, filename)
+        # create 2 subfolders
+        # first subfolder is the first 2 chars of the hash
+        # second subfolder is the last 2 chars of the hash
+        subfolder1 = id[0:2]
+        subfolder2 = id[-2:]
+        path = os.path.join(self.path, subfolder1, subfolder2)
+        # create path
+        if not os.path.exists(path):
+            os.makedirs(path)
+        filepath = os.path.join(path, filename)
         return filepath
 
     async def download(self, url, id, session):
