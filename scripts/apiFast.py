@@ -155,7 +155,7 @@ async def spritesheets(instance_id: str):
     config = InstanceManager[instance_id]["config"]
     images = InstanceManager[instance_id]["images"]
     files = [os.path.abspath(path) for (id, path) in images]
-    path = config["thumbnailPath"]
+    path = config["spritesheetPath"]
     await makeSpritesheets(files, instance_id, path)
 
     config["status"] = "spritesheets"
@@ -189,10 +189,9 @@ async def umap(instance_id: str):
 
     config = InstanceManager[instance_id]["config"]
     images = InstanceManager[instance_id]["images"]
-    features = InstanceManager[instance_id]["features"]
+    (ids,features) = InstanceManager[instance_id]["features"]
 
     path = config["path"]
-    ids = [id for (id, path) in images]
 
     await makeUmap(features, instance_id, path, ids)
 

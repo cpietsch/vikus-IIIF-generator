@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import logging
 from helpers import *
-from rasterfairy import coonswarp
-import rasterfairy
+# from rasterfairy import coonswarp
+# import rasterfairy
 
 class DimensionReductor:
     def __init__(self, n_neighbors=15, min_dist=0.1, n_components=2, metric='euclidean', cache=None):

@@ -19,8 +19,8 @@ class Sharpsheet:
         outputPath = kwargs.get('outputPath', None)
 
         command = [
-            #'/scripts/sharpsheet/bin/sharpsheet',
-            'sharpsheet',
+            '/scripts/sharpsheet/bin/sharpsheet',
+            #'sharpsheet',
             files.__str__(),
             '--outputPath', outputPath,
             '--outputFormat', format,

@@ -135,7 +135,7 @@ def create_config_json(iiif_url: str, label: str):
     path = os.path.join(DATA_DIR, uid)
     os.mkdir(path)
 
-    thumbnailPath = createFolder("{}/images/thumbs".format(path))
+    spritesheetPath = createFolder("{}/images/sprites".format(path))
     timestamp = int(time.time())
 
     config = {
@@ -143,7 +143,7 @@ def create_config_json(iiif_url: str, label: str):
         "label": label,
         "iiif_url": iiif_url,
         "path": path,
-        "thumbnailPath": thumbnailPath,
+        "spritesheetPath": spritesheetPath,
         "created": timestamp,
         "updated": timestamp,
         "status": "created"
@@ -208,7 +208,7 @@ async def makeFeatures(files, instanceId):
         "openai/clip-vit-base-patch32", "cpu", cache=cache, overwrite=False, instanceId=instanceId)
     featureExtractor.load_model()
     features = await featureExtractor.concurrent_extract_features(files)
-    print(features)
+    #print(features)
     return features
 
 
