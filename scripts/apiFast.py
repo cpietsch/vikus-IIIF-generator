@@ -63,10 +63,13 @@ def list_instances():
     paths = sorted(filter(os.path.isdir, Path(DATA_DIR).iterdir()),
                    key=os.path.getmtime, reverse=True)
     for dir in paths:
+        if dir.name in ['images', 'viewer']:
+            continue
         instance = {
             "id": dir.name,
             "absolutePath": dir.resolve(),
             "label": dir.name,
+            "modified": os.path.getmtime(dir),
         }
         instances.append(instance)
     return instances
@@ -155,8 +158,9 @@ async def spritesheets(instance_id: str):
     config = InstanceManager[instance_id]["config"]
     images = InstanceManager[instance_id]["images"]
     files = [os.path.abspath(path) for (id, path) in images]
-    path = config["spritesheetPath"]
-    await makeSpritesheets(files, instance_id, path)
+    spritesheetPath = config["spritesheetPath"]
+    projectPath = config["path"]
+    await makeSpritesheets(files, instance_id, projectPath, spritesheetPath)
 
     config["status"] = "spritesheets"
 
@@ -189,7 +193,7 @@ async def umap(instance_id: str):
 
     config = InstanceManager[instance_id]["config"]
     images = InstanceManager[instance_id]["images"]
-    (ids,features) = InstanceManager[instance_id]["features"]
+    (ids, features) = InstanceManager[instance_id]["features"]
 
     path = config["path"]
 

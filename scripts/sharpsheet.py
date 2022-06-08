@@ -20,7 +20,7 @@ class Sharpsheet:
 
         command = [
             '/scripts/sharpsheet/bin/sharpsheet',
-            #'sharpsheet',
+            # 'sharpsheet',
             files.__str__(),
             '--outputPath', outputPath,
             '--outputFormat', format,
@@ -57,11 +57,14 @@ class Sharpsheet:
             os.path.join(inputPath, '../sprites/')))
         input = inputPath + '/*.jpg'
 
-        command = ['sharpsheet', input,
-                   '--outputPath', outputPath,
-                   '--outputFormat', format,
-                   '--outputQuality', quality.__str__(),
-                   '--sheetDimension', dimension.__str__()]
+        command = [
+            # 'sharpsheet',
+            '/scripts/sharpsheet/bin/sharpsheet',
+            input,
+            '--outputPath', outputPath,
+            '--outputFormat', format,
+            '--outputQuality', quality.__str__(),
+            '--sheetDimension', dimension.__str__()]
         print(command.__str__())
 
         proc = await asyncio.create_subprocess_exec(

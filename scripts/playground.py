@@ -171,7 +171,7 @@ async def crawlCollection(url, instanceId):
 @duration
 async def crawlImages(manifests, instanceId):
     imageCrawler = ImageCrawler(
-        workers=3,
+        workers=5,
         path=DATA_IMAGES_DIR,
         instanceId=instanceId,
         cache=cache
@@ -193,9 +193,14 @@ async def makeMetadata(manifests, instanceId, path):
 
 
 @duration
-async def makeSpritesheets(files, instanceId, path):
-    spriter = Sharpsheet(logger=logger)
-    await spriter.generate(files=files, outputPath=path)
+async def makeSpritesheets(files, instanceId, projectPath, spritesheetPath):
+    spriter = Sharpsheet(logger=logger, instanceId=instanceId)
+    thumbnailPath = createFolder("{}/images/thumbs".format(projectPath))
+    # make for each file a symlink into the thumbnailPath folder
+    for file in files:
+        os.symlink(file, os.path.join(thumbnailPath, os.path.basename(file)))
+
+    await spriter.generateFromPath(thumbnailPath, outputPath=spritesheetPath)
 
 
 @duration
@@ -208,7 +213,7 @@ async def makeFeatures(files, instanceId):
         "openai/clip-vit-base-patch32", "cpu", cache=cache, overwrite=False, instanceId=instanceId)
     featureExtractor.load_model()
     features = await featureExtractor.concurrent_extract_features(files)
-    #print(features)
+    # print(features)
     return features
 
 
