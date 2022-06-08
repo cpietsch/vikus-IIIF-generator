@@ -4,6 +4,9 @@ from imp import reload
 import json
 import uuid
 from warnings import catch_warnings
+from zipfile import ZipFile
+import zipfile
+from torch import absolute
 import uvicorn
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
@@ -132,7 +135,7 @@ async def crawl_images(instance_id: str):
 
 
 @app.get("/instances/{instance_id}/makeMetadata")
-async def metadata(instance_id: str):
+async def make_metadata(instance_id: str):
     if instance_id not in InstanceManager:
         await crawl_collection(instance_id)
 
@@ -151,7 +154,7 @@ async def metadata(instance_id: str):
 
 
 @app.get("/instances/{instance_id}/makeSpritesheets")
-async def spritesheets(instance_id: str):
+async def make_spritesheets(instance_id: str):
     if instance_id not in InstanceManager:
         await crawl_images(instance_id)
 
@@ -168,7 +171,7 @@ async def spritesheets(instance_id: str):
 
 
 @app.get("/instances/{instance_id}/makeFeatures")
-async def getFeatures(instance_id: str):
+async def make_features(instance_id: str):
     if instance_id not in InstanceManager:
         await crawl_images(instance_id)
 
@@ -187,9 +190,9 @@ async def getFeatures(instance_id: str):
 
 
 @app.get("/instances/{instance_id}/makeUmap")
-async def umap(instance_id: str):
+async def make_umap(instance_id: str):
     if instance_id not in InstanceManager:
-        await getFeatures(instance_id)
+        await make_features(instance_id)
 
     config = InstanceManager[instance_id]["config"]
     images = InstanceManager[instance_id]["images"]
@@ -200,6 +203,47 @@ async def umap(instance_id: str):
     await makeUmap(features, instance_id, path, ids)
 
     config["status"] = "umap"
+
+    return config
+
+
+@app.get("/instances/{instance_id}/run")
+async def run(instance_id: str):
+    # run all steps
+    await crawl_collection(instance_id)
+    await crawl_images(instance_id)
+    await make_metadata(instance_id)
+    await make_spritesheets(instance_id)
+    await make_features(instance_id)
+    await make_umap(instance_id)
+
+    config = InstanceManager[instance_id]["config"]
+    config["status"] = "umap"
+
+    return config
+
+
+@app.get("/instances/{instance_id}/makeZip")
+async def make_zip(instance_id: str):
+    if instance_id not in InstanceManager:
+        await run(instance_id)
+
+    config = InstanceManager[instance_id]["config"]
+    path = config["path"]
+    zipPath = os.path.join(path, "project.zip")
+    with ZipFile(zipPath, 'w', zipfile.ZIP_DEFLATED) as zip:
+        for dirpath, dirnames, filenames in os.walk(path):
+            for filename in filenames:
+                if filename == "project.zip":
+                    continue
+                if "thumbs" in dirpath:
+                    continue
+                zip.write(os.path.join(dirpath, filename),
+                          os.path.relpath(os.path.join(dirpath, filename),
+                                          os.path.join(path, '..')))
+
+    config["status"] = "zip"
+    config["zipFile"] = instance_id + "/project.zip"
 
     return config
 

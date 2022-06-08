@@ -198,7 +198,9 @@ async def makeSpritesheets(files, instanceId, projectPath, spritesheetPath):
     thumbnailPath = createFolder("{}/images/thumbs".format(projectPath))
     # make for each file a symlink into the thumbnailPath folder
     for file in files:
-        os.symlink(file, os.path.join(thumbnailPath, os.path.basename(file)))
+        symlinkFile = os.path.join(thumbnailPath, os.path.basename(file))
+        if not os.path.exists(symlinkFile):
+            os.symlink(file, symlinkFile)
 
     await spriter.generateFromPath(thumbnailPath, outputPath=spritesheetPath)
 
