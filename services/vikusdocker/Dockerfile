@@ -24,15 +24,9 @@ EXPOSE $PORT
 # Using Debian, as root
 RUN curl -fsSL https://deb.nodesource.com/setup_17.x | bash -
 RUN apt-get install -y nodejs
-#RUN npm install -g sharpsheet
-# clone github repo and install
-RUN git clone https://github.com/cpietsch/sharpsheet /scripts/sharpsheet && cd /scripts/sharpsheet && npm install;
-#RUN git clone https://github.com/cpietsch/sharpsheet /scripts/sharpsheet && cd /scripts/sharpsheet && npm install;
 
-# WORKDIR /sharpsheet
-# RUN npm install
-# WORKDIR /frontend
-# RUN npm install
+RUN git clone https://github.com/cpietsch/sharpsheet /modules/sharpsheet; cd /modules/sharpsheet; npm install;
+
 
 WORKDIR /scripts
 
