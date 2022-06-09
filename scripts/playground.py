@@ -127,6 +127,13 @@ async def run_all(url, path, id):
     }
 
 
+def create_info_md(config):
+    path = config['path']
+    infoPath = os.path.join(path, "info.md")
+    with open(infoPath, "w") as f:
+        f.write("# {}\n{}\n".format(config["label"], config["iiif_url"]))
+
+
 def create_config_json(iiif_url: str, label: str):
     # uid = str(uuid.uuid4())
     uid = randomname.get_name()
@@ -151,6 +158,7 @@ def create_config_json(iiif_url: str, label: str):
 
     with open(os.path.join(path, "instance.json"), "w") as f:
         f.write(json.dumps(config, indent=4))
+
     return config
 
 

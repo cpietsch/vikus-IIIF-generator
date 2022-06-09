@@ -27,7 +27,7 @@ import shutil
 import uuid
 
 # from cache import Cache
-from playground import create_config_json, crawlCollection, crawlImages, makeMetadata, makeSpritesheets, saveConfig, makeFeatures, makeUmap, cache
+from playground import create_config_json, crawlCollection, crawlImages, makeMetadata, makeSpritesheets, saveConfig, create_info_md, makeFeatures, makeUmap, cache
 from connectionManager import ConnectionManager
 
 LOGGER = logging.getLogger(__name__)
@@ -260,6 +260,8 @@ def delete_instance(instance_id: str):
 @app.post("/instances")
 async def create_instance(url: str, label: str = None):
     config = create_config_json(url, label)
+    create_info_md(config)
+
     print(config)
     return config
 
