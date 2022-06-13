@@ -18,10 +18,10 @@ class ManifestCrawler:
     def __init__(self, *args, **kwargs):
         self.client = kwargs.get('client')
         self.instanceId = kwargs.get('instanceId', 'default')
-        self.limitRecursion = kwargs.get('limitRecursion', False)
+        self.limitRecursion = kwargs.get('limitRecursion', 0)
         self.cache = kwargs.get('cache', None)
-        self.semaphore = kwargs.get(
-            'semaphore', asyncio.Semaphore(self.limitRecursion and 10 or 0))
+        # self.semaphore = kwargs.get(
+        #     'semaphore', asyncio.Semaphore(self.limitRecursion and 10 or 0))
         self.session = kwargs.get('session')
         self.logger = kwargs.get(
             'logger', logging.getLogger('ManifestCrawler'))
@@ -65,7 +65,7 @@ class ManifestCrawler:
                         child.load(item)
                         manifest.add(child)
 
-                        if self.limitRecursion and manifest.depth >= self.limitRecursion:
+                        if self.limitRecursion != 0 and manifest.depth >= self.limitRecursion:
                             continue
 
                         if child.type == 'Collection' or child.type == 'Manifest':
@@ -81,7 +81,7 @@ class ManifestCrawler:
 
                 await self.cache.redis.xadd(self.instanceId, {
                     'progress': progress,
-                    'task': 'crawlingManifest',
+                    'task': 'crawlCollection',
                     'queue': queue.qsize(),
                     'size': self.size,
                     'type': manifest.type,

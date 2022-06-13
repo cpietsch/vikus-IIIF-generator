@@ -163,10 +163,11 @@ def create_config_json(iiif_url: str, label: str):
 
 
 @duration
-async def crawlCollection(url, instanceId):
+async def crawlCollection(url, instanceId, numWorkers=MANIFESTWORKERS, limitRecursion=False):
     manifest = Manifest(url=url)
     manifestCrawler = ManifestCrawler(
         cache=cache,
+        limitRecursion=limitRecursion,
         numWorkers=MANIFESTWORKERS,
         instanceId=instanceId
     )
@@ -229,8 +230,8 @@ async def makeFeatures(files, instanceId):
 
 @duration
 async def makeUmap(features, instanceId, path, ids, n_neighbors=15, min_dist=0.2):
-    from dimensionReductor import DimensionReductor
-    umaper = DimensionReductor(n_neighbors=n_neighbors, min_dist=min_dist)
+    from dimensionReduction import DimensionReduction
+    umaper = DimensionReduction(n_neighbors=n_neighbors, min_dist=min_dist)
     embedding = umaper.fit_transform(features)
     umaper.saveToCsv(embedding, path, ids)
     return path

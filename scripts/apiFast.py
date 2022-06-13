@@ -92,10 +92,10 @@ def read_instance(instance_id: str):
 
 
 @app.get("/instances/{instance_id}/crawlCollection")
-async def crawl_collection(instance_id: str):
+async def crawl_collection(instance_id: str, workers: int = 3, depth: int = 0):
     config = read_instance(instance_id)
 
-    manifests = await crawlCollection(config["iiif_url"], instance_id)
+    manifests = await crawlCollection(config["iiif_url"], instance_id, workers, depth)
 
     config["status"] = "crawledCollection"
     config["manifests"] = len(manifests)
@@ -190,7 +190,7 @@ async def make_features(instance_id: str):
 
 
 @app.get("/instances/{instance_id}/makeUmap")
-async def make_umap(instance_id: str):
+async def make_umap(instance_id: str, n_neighbors: int = 15, min_dist: float = 0.1):
     if instance_id not in InstanceManager:
         await make_features(instance_id)
 
@@ -200,7 +200,7 @@ async def make_umap(instance_id: str):
 
     path = config["path"]
 
-    await makeUmap(features, instance_id, path, ids)
+    await makeUmap(features, instance_id, path, ids, n_neighbors, min_dist)
 
     config["status"] = "umap"
 

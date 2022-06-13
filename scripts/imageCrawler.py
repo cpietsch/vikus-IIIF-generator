@@ -110,7 +110,7 @@ class ImageCrawler:
                 await self.cache.redis.xadd(self.instanceId, {
                     'progress': progress,
                     'size': self.size,
-                    'task': 'crawlingImages',
+                    'task': 'crawlImages',
                     'queue': self.queue.qsize(),
                     'completed': self.completed
                 })
