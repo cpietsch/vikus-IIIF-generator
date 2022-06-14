@@ -91,11 +91,16 @@ def read_instance(instance_id: str):
     return config
 
 
-@app.get("/instances/{instance_id}/crawlCollection")
+@app.post("/instances/crawlCollection")
 async def crawl_collection(instance_id: str, workers: int = 3, depth: int = 0):
     config = read_instance(instance_id)
 
-    manifests = await crawlCollection(config["iiif_url"], instance_id, workers, depth)
+    manifests = await crawlCollection(
+        config["iiif_url"],
+        instance_id,
+        workers,
+        depth
+    )
 
     config["status"] = "crawledCollection"
     config["manifests"] = len(manifests)
@@ -112,15 +117,17 @@ async def crawl_collection(instance_id: str, workers: int = 3, depth: int = 0):
     return config
 
 
-@app.get("/instances/{instance_id}/crawlImages")
-async def crawl_images(instance_id: str):
+@app.post("/instances/crawlImages")
+async def crawl_images(instance_id: str, worker: int = 3):
+    print("/instances/crawlImages")
+    print(instance_id)
     if instance_id not in InstanceManager:
         await crawl_collection(instance_id)
 
     config = InstanceManager[instance_id]["config"]
 
     manifests = InstanceManager[instance_id]["manifests"]
-    images = await crawlImages(manifests, instance_id)
+    images = await crawlImages(manifests, instance_id, worker)
 
     config["status"] = "crawledImages"
     config["images"] = len(images)
@@ -189,7 +196,7 @@ async def make_features(instance_id: str):
     return config
 
 
-@app.get("/instances/{instance_id}/makeUmap")
+@app.post("/instances/makeUmap")
 async def make_umap(instance_id: str, n_neighbors: int = 15, min_dist: float = 0.1):
     if instance_id not in InstanceManager:
         await make_features(instance_id)
@@ -273,32 +280,22 @@ async def websocket_endpoint(websocket: WebSocket, instance_id: str):
     await manager.connect(websocket)
 
     last_id = 0
-    sleep_ms = 100
     print("Connected", instance_id)
-
     await cache.redis.delete(instance_id)
 
     try:
         while True:
-            # print(f"instance_id: {instance_id}")
-            # await asyncio.sleep(0.3)
-            await manager.broadcast({"type": "ping", "data": 1})
-            # resp = cache.xread({instance_id: '$'}, None, sleep_ms)
-            resp = await cache.redis.xread({instance_id: last_id},
-                                           count=100, block=sleep_ms)
+            resp = await cache.redis.xread({instance_id: last_id}, count=100)
 
             if resp:
                 key, messages = resp[0]
-                last_id, data = messages[0]
-
-                ddata_dict = {
-                    k.decode("utf-8"): data[k].decode("utf-8") for k in data}
-                # print(ddata_dict)
-                # print(resp)
-                await manager.broadcast(ddata_dict)
+                for (id, message) in messages:
+                    last_id = id
+                    data = { key.decode(): val.decode() for key, val in message.items() }
+                    await manager.broadcast(data)
             else:
-                # print("no data")
-                await asyncio.sleep(0.01)
+                await asyncio.sleep(0.1)
+                await manager.broadcast({"type": "ping", "data": 1})
     except Exception as e:
         manager.disconnect(websocket)
         print("Disconnected", instance_id)

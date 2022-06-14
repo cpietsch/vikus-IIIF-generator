@@ -45,6 +45,7 @@ pretty.install()
 DATA_DIR = "../data"
 DATA_IMAGES_DIR = "../data/images"
 MANIFESTWORKERS = 2
+IMAGEWORKERS = 4
 
 debug = False
 loggingLevel = logging.DEBUG if debug else logging.INFO
@@ -178,9 +179,9 @@ async def crawlCollection(url, instanceId, numWorkers=MANIFESTWORKERS, limitRecu
 
 
 @duration
-async def crawlImages(manifests, instanceId):
+async def crawlImages(manifests, instanceId, numWorkers=IMAGEWORKERS):
     imageCrawler = ImageCrawler(
-        workers=5,
+        numWorkers=numWorkers,
         path=DATA_IMAGES_DIR,
         instanceId=instanceId,
         cache=cache

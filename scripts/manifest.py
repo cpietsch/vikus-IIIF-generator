@@ -18,8 +18,8 @@ class Manifest:
         self.url = kwargs.get('url', '')
         self.parent = kwargs.get('parent', None)
         self.label = None
-        self.tree = kwargs.get(
-            'tree', self.parent and self.parent.tree or None)
+        # self.tree = kwargs.get(
+        #     'tree', self.parent and self.parent.tree or None)
         self.type = None
         self.logger = kwargs.get('logger', logging.getLogger('rich'))
         self.shortId = self.id.split('/')[-1]
@@ -50,12 +50,12 @@ class Manifest:
             self.label = self.getLabel(self.data)
             self.type = self.data.get('type')
 
-            if(self.tree is None):
-                self.tree = Tree(
-                    f":open_file_folder: [link {self.id}]{self.id}")
-            else:
-                emoji = self.type == 'Collection' and ':open_file_folder:' or ':framed_picture:'
-                self.tree = self.tree.add(f"{emoji} [link {self.id}]{self.id}")
+            # if(self.tree is None):
+            #     self.tree = Tree(
+            #         f":open_file_folder: [link {self.id}]{self.id}")
+            # else:
+            #     emoji = self.type == 'Collection' and ':open_file_folder:' or ':framed_picture:'
+            #     self.tree = self.tree.add(f"{emoji} [link {self.id}]{self.id}")
 
             return self
 

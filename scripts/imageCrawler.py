@@ -22,7 +22,7 @@ class ImageCrawler:
             'semaphore', asyncio.Semaphore(self.limitRecursion and 10 or 0))
         self.session = kwargs.get('session')
         self.logger = kwargs.get('logger', logging.getLogger('ImageCrawler'))
-        self.workers = kwargs.get('workers', 1)
+        self.numWorkers = kwargs.get('numWorkers', 1)
         self.callback = kwargs.get('callback', None)
         self.path = kwargs.get('path', "../data")
         self.queue = asyncio.Queue()
@@ -128,7 +128,7 @@ class ImageCrawler:
         self.size = self.queue.qsize()
         self.completed = 0
 
-        for i in range(self.workers):
+        for i in range(self.numWorkers):
             task = asyncio.create_task(self.imageWorker(f'worker-{i}'))
             self.tasks.append(task)
 
