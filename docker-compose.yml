@@ -15,11 +15,10 @@ services:
     image: "redis:alpine"
 
   webserver:
-    #image: nginx
+    #image: nginx:alpine
     build: ./services/nginx
     ports:
-      - 8000:80
+      - 8000:8000
     volumes:
       - ./data:/usr/share/nginx/html/data
       - ./services/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
-    #  - ./vikus-docker-frontend:/usr/share/nginx/html/frontend
