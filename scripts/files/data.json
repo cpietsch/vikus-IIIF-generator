@@ -1,0 +1,40 @@
+{
+    "project": {
+        "name": "concentric-game",
+        "quality": 1
+    },
+    "loader": {
+        "info": "info.md",
+        "items": "metadata.csv",
+        "tsne": "umap.csv",
+        "textures": {
+            "medium": {
+                "size": 100,
+                "url": "images/sprites/spritesheet.json"
+            },
+            "detail": "image",
+            "big": "largeImage"
+        }
+    },
+    "style": {
+        "fontColor": "#f7efcd",
+        "fontColorActive": "#1c1e1f",
+        "fontBackground": "#f7efcd",
+        "textShadow": "1px 1px 0px #00000085",
+        "canvasBackground": "#1c1e1f",
+        "timelineBackground": "#f7efcd",
+        "timelineFontColor": "#000",
+        "backgroundHeader": "#035151",
+        "fontColorHeader": "#fffefa",
+        "detailBackground": "#fffefa",
+        "infoBackground": "#353535",
+        "infoFontColor": "#f7efcd",
+        "searchbarBackground": "#353535"
+    },
+    "projection": {
+        "columns": 8
+    },
+    "detail": {
+        "structure": []
+    }
+}
