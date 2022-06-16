@@ -27,7 +27,7 @@ import shutil
 import uuid
 
 # from cache import Cache
-from playground import create_config_json, crawlCollection, crawlImages, makeMetadata, makeSpritesheets, saveConfig, create_info_md, makeFeatures, makeUmap, cache
+from vikus import create_config_json, crawlCollection, crawlImages, makeMetadata, makeSpritesheets, saveConfig, create_info_md, makeFeatures, makeUmap, cache
 from connectionManager import ConnectionManager
 
 LOGGER = logging.getLogger(__name__)
@@ -141,7 +141,7 @@ async def crawl_images(instance_id: str, worker: int = 3):
     return config
 
 
-@app.get("/instances/{instance_id}/makeMetadata")
+@app.post("/instances/makeMetadata")
 async def make_metadata(instance_id: str):
     if instance_id not in InstanceManager:
         await crawl_collection(instance_id)
@@ -160,8 +160,8 @@ async def make_metadata(instance_id: str):
     return config
 
 
-@app.get("/instances/{instance_id}/makeSpritesheets")
-async def make_spritesheets(instance_id: str):
+@app.post("/instances/makeSpritesheets")
+async def make_spritesheets(instance_id: str, spriteSize: int = 128):
     if instance_id not in InstanceManager:
         await crawl_images(instance_id)
 
@@ -170,22 +170,22 @@ async def make_spritesheets(instance_id: str):
     files = [os.path.abspath(path) for (id, path) in images]
     spritesheetPath = config["spritesheetPath"]
     projectPath = config["path"]
-    await makeSpritesheets(files, instance_id, projectPath, spritesheetPath)
+    await makeSpritesheets(files, instance_id, projectPath, spritesheetPath, spriteSize)
 
     config["status"] = "spritesheets"
 
     return config
 
 
-@app.get("/instances/{instance_id}/makeFeatures")
-async def make_features(instance_id: str):
+@app.post("/instances/makeFeatures")
+async def make_features(instance_id: str, batchSize: int = 64):
     if instance_id not in InstanceManager:
         await crawl_images(instance_id)
 
     config = InstanceManager[instance_id]["config"]
     images = InstanceManager[instance_id]["images"]
 
-    features = await makeFeatures(images, instance_id)
+    features = await makeFeatures(images, instance_id, batchSize)
 
     InstanceManager[instance_id].update({
         "status": "features",
@@ -214,7 +214,7 @@ async def make_umap(instance_id: str, n_neighbors: int = 15, min_dist: float = 0
     return config
 
 
-@app.get("/instances/{instance_id}/run")
+@app.post("/instances/run")
 async def run(instance_id: str):
     # run all steps
     await crawl_collection(instance_id)
@@ -230,7 +230,7 @@ async def run(instance_id: str):
     return config
 
 
-@app.get("/instances/{instance_id}/makeZip")
+@app.post("/instances/makeZip")
 async def make_zip(instance_id: str):
     if instance_id not in InstanceManager:
         await run(instance_id)

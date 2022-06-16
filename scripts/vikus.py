@@ -70,63 +70,10 @@ cache = Cache()
 url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Watercolors"
 #url = "https://iiif.bodleian.ox.ac.uk/iiif/manifest/e32a277e-91e2-4a6d-8ba6-cc4bad230410.json"
 
-
-@duration
-async def run_all(url, path, id):
-
-    manifest = Manifest(url=url)
-    # dataPath = createFolder("../data/{}".format(manifest.shortId))
-    dataPath = createFolder(path)
-    thumbPath = createFolder("{}/images/thumbs".format(dataPath))
-    print(thumbPath)
-
-    manifestCrawler = ManifestCrawler(cache=cache, numWorkers=2)
-    manifest = await manifestCrawler.crawl(manifest)
-    manifests = manifest.getFlatList(manifest, type='Canvas')
-    #manifests = manifests[:2]
-
-    metadata = [m.getMetadata() for m in manifests]
-    dataframe = pd.DataFrame(metadata)
-    dataframe.to_csv(dataPath + '/metadata.csv', index=False)
-    # print(dataframe)
-
-    imageCrawler = ImageCrawler(workers=8, path=thumbPath)
-    imageCrawler.addFromManifests(manifests)
-    images = await imageCrawler.runImageWorkers()
-
-    spriter = Sharpsheet(logger=logger)
-    await spriter.generate(thumbPath)
-
-    featureExtractor = FeatureExtractor(
-        "openai/clip-vit-base-patch32", "cpu", cache=cache, overwrite=False)
-    featureExtractor.load_model()
-    (ids, features) = featureExtractor.concurrent_extract_features(images)
-
-    # print(ids, features)
-    # print(features[0])
-
-    umaper = DimensionReductor(n_neighbors=15, min_dist=0.2)
-    embedding = umaper.fit_transform(features)
-    umaper.saveToCsv(embedding, dataPath, ids)
-
-    umaper = DimensionReductor(n_neighbors=3, min_dist=0.2)
-    embedding = umaper.fit_transform(features)
-    umaper.saveToCsv(embedding, dataPath, ids, "umap3")
-
-    # print(embedding)
-    # print(manifest.tree)
-    # print(thumbnails)
-    print('Done')
-    print('Open http://localhost:8000/viewer/?{}'.format(id))
-
-    instance_url = 'http://localhost:8000/viewer/?{}'.format(id)
-
-    return {
-        'id': id,
-        'url': instance_url,
-        'path': path,
-    }
-
+from featureExtractor import FeatureExtractor
+featureExtractor = FeatureExtractor(
+    "openai/clip-vit-base-patch32", "cpu", cache=cache, overwrite=False)
+featureExtractor.load_model()
 
 def create_info_md(config):
     path = config['path']
@@ -203,7 +150,7 @@ async def makeMetadata(manifests, instanceId, path):
 
 
 @duration
-async def makeSpritesheets(files, instanceId, projectPath, spritesheetPath):
+async def makeSpritesheets(files, instanceId, projectPath, spritesheetPath, spriteSize=128):
     spriter = Sharpsheet(logger=logger, instanceId=instanceId)
     thumbnailPath = createFolder("{}/images/thumbs".format(projectPath))
     # make for each file a symlink into the thumbnailPath folder
@@ -212,20 +159,20 @@ async def makeSpritesheets(files, instanceId, projectPath, spritesheetPath):
         if not os.path.exists(symlinkFile):
             os.symlink(file, symlinkFile)
 
-    await spriter.generateFromPath(thumbnailPath, outputPath=spritesheetPath)
+    await spriter.generateFromPath(thumbnailPath, outputPath=spritesheetPath, spriteSize=spriteSize)
 
 
 @duration
-async def makeFeatures(files, instanceId):
-    print("Extracting features import")
-    from featureExtractor import FeatureExtractor
-    print("Extracting features")
+async def makeFeatures(files, instanceId, batchSize):
+    # print("Extracting features import")
+    # from featureExtractor import FeatureExtractor
+    # print("Extracting features")
 
-    featureExtractor = FeatureExtractor(
-        "openai/clip-vit-base-patch32", "cpu", cache=cache, overwrite=False, instanceId=instanceId)
-    featureExtractor.load_model()
+    # featureExtractor = FeatureExtractor(
+    #     "openai/clip-vit-base-patch32", "cpu", cache=cache, overwrite=False, instanceId=instanceId)
+    # featureExtractor.load_model()
     #features = await featureExtractor.concurrent_extract_features(files)
-    features = await featureExtractor.batch_extract_features(files)
+    features = await featureExtractor.batch_extract_features_cached(files, batchSize)
     # print(features)
     return features
 
