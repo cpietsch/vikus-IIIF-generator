@@ -12,8 +12,14 @@
                 "size": 100,
                 "url": "images/sprites/spritesheet.json"
             },
-            "detail": "image",
-            "big": "largeImage"
+            "detail": {
+                "size": 1025,
+                "csv": "image"
+            },
+            "big": {
+                "size": 4096,
+                "csv": "largeImage"
+            }
         }
     },
     "style": {
