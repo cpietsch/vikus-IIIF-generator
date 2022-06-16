@@ -27,7 +27,7 @@ import shutil
 import uuid
 
 # from cache import Cache
-from vikus import create_config_json, crawlCollection, crawlImages, makeMetadata, makeSpritesheets, saveConfig, create_info_md, makeFeatures, makeUmap, cache
+from vikus import create_config_json, crawlCollection, create_data_json, crawlImages, makeMetadata, makeSpritesheets, saveConfig, create_info_md, makeFeatures, makeUmap, cache
 from connectionManager import ConnectionManager
 
 LOGGER = logging.getLogger(__name__)
@@ -268,6 +268,7 @@ def delete_instance(instance_id: str):
 async def create_instance(url: str, label: str = None):
     config = create_config_json(url, label)
     create_info_md(config)
+    create_data_json(config)
 
     print(config)
     return config

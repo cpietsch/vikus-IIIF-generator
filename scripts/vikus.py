@@ -81,6 +81,20 @@ def create_info_md(config):
     with open(infoPath, "w") as f:
         f.write("# {}\n{}\n".format(config["label"], config["iiif_url"]))
 
+def create_data_json(config):
+    path = config['path']
+    dataPath = os.path.join(path, "data.json")
+    # load json from "files/data.json"
+    with open("files/data.json", "r") as f:
+        data = json.load(f)
+        print(data)
+    
+    # add instance label to data
+    data["project"]["name"] = config["label"]
+
+    with open(dataPath, "w") as f:
+        f.write(json.dumps(data, indent=4))
+
 
 def create_config_json(iiif_url: str, label: str):
     # uid = str(uuid.uuid4())

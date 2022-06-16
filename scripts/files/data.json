@@ -1,6 +1,6 @@
 {
     "project": {
-        "name": "concentric-game",
+        "name": "{{ label }}",
         "quality": 1
     },
     "loader": {
