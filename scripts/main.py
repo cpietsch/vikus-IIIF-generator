@@ -267,8 +267,6 @@ def delete_instance(instance_id: str):
 @app.post("/instances")
 async def create_instance(url: str, label: str = None):
     config = create_config_json(url, label)
-    create_info_md(config)
-    create_data_json(config)
 
     print(config)
     return config

@@ -15,6 +15,7 @@ import random
 import traceback
 import hashlib
 import randomname
+import math
 
 import numpy as np
 
@@ -83,14 +84,16 @@ def create_info_md(config):
 
 def create_data_json(config):
     path = config['path']
-    dataPath = os.path.join(path, "data.json")
+    dataPath = os.path.join(path, "config.json")
     # load json from "files/data.json"
-    with open("files/data.json", "r") as f:
+    with open("files/config.json", "r") as f:
         data = json.load(f)
-        print(data)
-    
-    # add instance label to data
+
     data["project"]["name"] = config["label"]
+    columns = 100
+    if "images" in config:
+        columns = math.isqrt(int(config["images"] * 1.4))
+    data["projection"]["columns"] = columns
 
     with open(dataPath, "w") as f:
         f.write(json.dumps(data, indent=4))
@@ -118,8 +121,7 @@ def create_config_json(iiif_url: str, label: str):
         "status": "created"
     }
 
-    with open(os.path.join(path, "instance.json"), "w") as f:
-        f.write(json.dumps(config, indent=4))
+    saveConfig(config)
 
     return config
 
@@ -210,6 +212,9 @@ async def test(url, path, instanceId):
 def saveConfig(config):
     with open(os.path.join(config['path'], "instance.json"), "w") as f:
         f.write(json.dumps(config, indent=4))
+    
+    create_info_md(config)
+    create_data_json(config)
 
 
 if __name__ == "__main__":
