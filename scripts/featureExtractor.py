@@ -59,14 +59,38 @@ class FeatureExtractor:
             self.logger.debug("Caching features for {}".format(id))
             await self.cache.saveFeatures(id, features)
         return features
+    
+    @torch.no_grad()
+    async def batch_extract_features_cached(self, imageList, batchSize = 64):
+        featuresList = []
+        idList = []
+        queueList = []
+        for (id, path) in imageList:
+            features = await self.cache.getFeatures(id)
+            if(features is not None):
+                self.logger.debug("Found features in cache for {}".format(id))
+                featuresList.append(features)
+                idList.append(id)
+            else:
+                queueList.append((id, path))
+        print("{}/{} images found in cache".format(len(featuresList), len(imageList)))
+        if(len(queueList) > 0):
+            self.logger.debug("Extracting features for {}".format(len(queueList)))
+            (ids, features) = await self.batch_extract_features(queueList, batchSize)
+            featuresList.extend(features)
+            idList.extend(ids)
+            for (id, feature) in zip(ids, features):
+                self.logger.debug("Caching features for {}".format(id))
+                await self.cache.saveFeatures(id, feature)
+        return (idList, featuresList)
+
 
     @torch.no_grad()
-    async def batch_extract_features(self, imageList):
+    async def batch_extract_features(self, imageList, batchSize = 64):
         self.logger.debug("Extracting features of {}".format(len(imageList)))
         features = []
         ids = []
 
-        batchSize = 64
         batchedImageList = [imageList[i:i + batchSize] for i in range(0, len(imageList), batchSize)]
         for batch in track(batchedImageList, total=len(batchedImageList), description="Extracting features in batches"):
             images = [self.prepareImage(image_path) for (id, image_path) in batch]
