@@ -224,7 +224,8 @@ async def makeFeatures(files, instanceId):
     featureExtractor = FeatureExtractor(
         "openai/clip-vit-base-patch32", "cpu", cache=cache, overwrite=False, instanceId=instanceId)
     featureExtractor.load_model()
-    features = await featureExtractor.concurrent_extract_features(files)
+    #features = await featureExtractor.concurrent_extract_features(files)
+    features = await featureExtractor.batch_extract_features(files)
     # print(features)
     return features
 

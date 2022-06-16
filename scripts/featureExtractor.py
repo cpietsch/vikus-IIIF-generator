@@ -61,15 +61,23 @@ class FeatureExtractor:
         return features
 
     @torch.no_grad()
-    def batch_extract_features(self, imageList):
+    async def batch_extract_features(self, imageList):
         self.logger.debug("Extracting features of {}".format(len(imageList)))
-        images = [self.prepareImage(image_path)
-                  for (id, image_path) in imageList]
-        inputs = self.processor(
-            images=images, return_tensors="pt", padding=True)
-        outputs = self.model.get_image_features(**inputs)
-        detached = outputs.detach().numpy()
-        return detached
+        features = []
+        ids = []
+
+        batchSize = 64
+        batchedImageList = [imageList[i:i + batchSize] for i in range(0, len(imageList), batchSize)]
+        for batch in track(batchedImageList, total=len(batchedImageList), description="Extracting features in batches"):
+            images = [self.prepareImage(image_path) for (id, image_path) in batch]
+            inputs = self.processor(
+                images=images, return_tensors="pt", padding=True)
+            outputs = self.model.get_image_features(**inputs)
+            detached = outputs.detach().numpy()
+            features.extend(detached)
+            ids.extend([id for (id, image_path) in batch])
+
+        return (ids, features)
 
     @torch.no_grad()
     async def concurrent_extract_features(self, imageList):
