@@ -7,16 +7,16 @@ ENV PYTHONUNBUFFERED True
 #ENV APP_HOME /app
 RUN mkdir /scripts
 WORKDIR /scripts
-#COPY . ./scripts
+# COPY . /scripts
 
 #RUN apk add --no-cache gcc musl-dev linux-headers
 
 # install rust
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
+# RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
+# ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Install production dependencies.
-#RUN pip install --no-cache-dir -r requirements.txt
+# RUN pip install --no-cache-dir -r requirements.txt
 
 ENV PORT 5000
 EXPOSE $PORT
@@ -28,7 +28,7 @@ RUN apt-get install -y nodejs
 RUN git clone https://github.com/cpietsch/sharpsheet /modules/sharpsheet; cd /modules/sharpsheet; npm install;
 
 
-WORKDIR /scripts
+# WORKDIR /scripts
 
 #CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app
 
