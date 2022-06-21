@@ -97,6 +97,7 @@ class ManifestCrawler:
 
     async def crawl(self, manifest):
         self.logger.debug("load manifests from {}".format(manifest.id))
+        await self.cache.redis.delete(self.instanceId)
         # Create a queue that we will use to store our "workload".
         queue = asyncio.PriorityQueue()
         self.size = 1

@@ -11,9 +11,10 @@ class KeywordExtractor:
     def __init__(self, *args, **kwargs):
         self.logger = kwargs.get('logger', logging.getLogger('rich'))
         self.nlp = spacy.load("en_core_web_lg")
+        self.nlp.add_pipe("yake")
 
     def extract(self, manifests):
-        self.logger("extracting")
+        self.logger.debug("extracting")
         metadataList = []
         for manifest in manifests:
             metadata = manifest.getMetadata()
@@ -26,7 +27,7 @@ class KeywordExtractor:
         return [keyword for keyword, score in doc._.extract_keywords(n)]
 
     def saveToCsv(self, metadataList, file):
-        self.logger("saving to csv")
+        self.logger.debug("saving to csv")
         dataframe = pd.DataFrame(metadataList)
         dataframe.to_csv(file, index=False)
 
