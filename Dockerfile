@@ -15,6 +15,7 @@ WORKDIR /scripts
 
 # Install production dependencies.
 RUN pip install --no-cache-dir -r requirements.txt
+RUN spacy download en_core_web_lg
 
 ENV PORT 5000
 EXPOSE $PORT

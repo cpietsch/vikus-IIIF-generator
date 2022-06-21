@@ -158,11 +158,9 @@ async def crawlImages(manifests, instanceId, numWorkers=IMAGEWORKERS):
 @duration
 async def makeMetadata(manifests, instanceId, path):
     file = path + '/metadata.csv'
-    metadata = [m.getMetadata() for m in manifests]
-    dataframe = pd.DataFrame(metadata)
-    dataframe.to_csv(file, index=False)
+    
 
-    return {'file': file, 'dataframe': dataframe}
+    return {'file': file}
 
 
 @duration
