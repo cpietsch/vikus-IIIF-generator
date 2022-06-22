@@ -117,7 +117,7 @@ async def crawl_collection(instance_id: str, workers: int = 3, depth: int = 0):
     return config
 
 
-@app.post("/instances/crawlImages")
+@app.post("/instances/crawlImages") 
 async def crawl_images(instance_id: str, worker: int = 3):
     print("/instances/crawlImages")
     print(instance_id)
@@ -197,7 +197,7 @@ async def make_features(instance_id: str, batchSize: int = 64):
 
 
 @app.post("/instances/makeUmap")
-async def make_umap(instance_id: str, n_neighbors: int = 15, min_dist: float = 0.1):
+async def make_umap(instance_id: str, n_neighbors: int = 15, min_distance: float = 0.1):
     if instance_id not in InstanceManager:
         await make_features(instance_id)
 
@@ -207,7 +207,8 @@ async def make_umap(instance_id: str, n_neighbors: int = 15, min_dist: float = 0
 
     path = config["path"]
 
-    await makeUmap(features, instance_id, path, ids, n_neighbors, min_dist)
+    #print("make_umap", instance_id, n_neighbors, min_distance)
+    await makeUmap(features, instance_id, path, ids, n_neighbors, min_distance)
 
     config["status"] = "umap"
 

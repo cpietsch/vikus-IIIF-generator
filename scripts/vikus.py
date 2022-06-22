@@ -176,14 +176,6 @@ async def makeSpritesheets(files, instanceId, projectPath, spritesheetPath, spri
 
 @duration
 async def makeFeatures(files, instanceId, batchSize):
-    # print("Extracting features import")
-    # from featureExtractor import FeatureExtractor
-    # print("Extracting features")
-
-    # featureExtractor = FeatureExtractor(
-    #     "openai/clip-vit-base-patch32", "cpu", cache=cache, overwrite=False, instanceId=instanceId)
-    # featureExtractor.load_model()
-    #features = await featureExtractor.concurrent_extract_features(files)
     features = await featureExtractor.batch_extract_features_cached(files, batchSize)
     # print(features)
     return features
@@ -194,7 +186,8 @@ async def makeUmap(features, instanceId, path, ids, n_neighbors=15, min_dist=0.2
     from dimensionReduction import DimensionReduction
     umaper = DimensionReduction(n_neighbors=n_neighbors, min_dist=min_dist)
     embedding = umaper.fit_transform(features)
-    umaper.saveToCsv(embedding, path, ids)
+    fairy = umaper.rasterfairy(embedding)
+    umaper.saveToCsv(fairy, path, ids)
     return path
 
 

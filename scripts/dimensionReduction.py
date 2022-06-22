@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 import logging
 from helpers import *
-# from rasterfairy import coonswarp
-# import rasterfairy
+from rasterfairy import coonswarp
+import rasterfairy
 
 
 class DimensionReduction:
@@ -40,20 +40,24 @@ class DimensionReduction:
         dataframe.to_csv("{}/{}.csv".format(path, name), index=False)
         self.logger.info("Saved embedding to {}".format(path))
 
+    def rasterfairy(self, embedding):
+        self.logger.info('Rasterfairy')
+        umap = (embedding + 1)/2
+        try:
+            umap = coonswarp.rectifyCloud(umap,
+                perimeterSubdivisionSteps=4,
+                autoPerimeterOffset=False,
+                paddingScale=1.05)
+        except Exception as error:
+            print(timestamp(), 'Coonswarp rectification failed', error)
+        pos = rasterfairy.transformPointCloud2D(umap)[0]
+        return pos
 
 if __name__ == "__main__":
-    umap = DimensionReductor(n_neighbors=2, min_dist=0.1)
+    umap = DimensionReduction(n_neighbors=2, min_dist=0.1)
     features = [[1, 2, 3], [4, 5, 6], [7, 8, 9], [7, 8, 9], [
         7, 8, 9], [7, 1, 9], [7, 8, 9], [7, 8, 9], [1, 8, 9]]
     features = np.array(features)
     embedding = umap.fit_transform(features)
-    # print(embedding)
-    # umap = np.array((embedding + 1)/2)
-    # print(umap)
-    # umap = coonswarp.rectifyCloud(umap,
-    #   perimeterSubdivisionSteps=4,
-    #   autoPerimeterOffset=False,
-    #   paddingScale=1.05)
-    # pos = rasterfairy.transformPointCloud2D(umap)[0]
-
-    # print(pos)
+    print(embedding)
+    
