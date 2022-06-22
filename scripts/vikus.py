@@ -36,11 +36,12 @@ from manifest import Manifest
 # from features import FeatureExtractor
 # from dimensionReductor import DimensionReductor
 from sharpsheet import Sharpsheet
+from featureExtractor import FeatureExtractor
+from metadataExtractor import MetadataExtractor
 
 import pandas as pd
 from pandas.io.json import json_normalize
 import uuid
-from featureExtractor import FeatureExtractor
 
 pretty.install()
 
@@ -69,6 +70,8 @@ url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Water
 featureExtractor = FeatureExtractor(cache=cache, overwrite=False)
 featureExtractor.load_model()
 #featureExtractor.save_model()
+
+metadataExtractor = MetadataExtractor()
 
 def create_info_md(config):
     path = config['path']
@@ -152,6 +155,9 @@ async def crawlImages(manifests, instanceId, numWorkers=IMAGEWORKERS):
 @duration
 async def makeMetadata(manifests, instanceId, path):
     file = path + '/metadata.csv'
+    metadata = metadataExtractor.extract(manifests)
+    metadataExtractor.saveToCsv(metadata, file)
+
     return {'file': file}
 
 
@@ -208,4 +214,4 @@ def saveConfig(config):
 
 
 if __name__ == "__main__":
-    asyncio.run(test(url, "test"))
+    asyncio.run(test(url, DATA_DIR + "/test", "test"))
