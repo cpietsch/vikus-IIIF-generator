@@ -40,6 +40,7 @@ from sharpsheet import Sharpsheet
 import pandas as pd
 from pandas.io.json import json_normalize
 import uuid
+from featureExtractor import FeatureExtractor
 
 pretty.install()
 
@@ -63,18 +64,11 @@ logger = logging.getLogger('rich')
 cache = Cache()
 # cache.clear()
 
-#url = "https://iiif.wellcomecollection.org/presentation/v3/collections/genres"
-#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
-#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths_and_legends"
-#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Advertisements"
-#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Stickers"
 url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Watercolors"
-#url = "https://iiif.bodleian.ox.ac.uk/iiif/manifest/e32a277e-91e2-4a6d-8ba6-cc4bad230410.json"
 
-from featureExtractor import FeatureExtractor
-featureExtractor = FeatureExtractor(
-    "openai/clip-vit-base-patch32", "cpu", cache=cache, overwrite=False)
+featureExtractor = FeatureExtractor(cache=cache, overwrite=False)
 featureExtractor.load_model()
+#featureExtractor.save_model()
 
 def create_info_md(config):
     path = config['path']
@@ -158,8 +152,6 @@ async def crawlImages(manifests, instanceId, numWorkers=IMAGEWORKERS):
 @duration
 async def makeMetadata(manifests, instanceId, path):
     file = path + '/metadata.csv'
-    
-
     return {'file': file}
 
 
@@ -216,5 +208,4 @@ def saveConfig(config):
 
 
 if __name__ == "__main__":
-    asyncio.run(test(
-        url, "../data/{}".format(hashlib.md5(url.encode('utf-8')).hexdigest()), "test"))
+    asyncio.run(test(url, "test"))

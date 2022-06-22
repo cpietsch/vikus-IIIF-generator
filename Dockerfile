@@ -14,8 +14,13 @@ WORKDIR /scripts
 # ENV PATH="/root/.cargo/bin:${PATH}"
 
 # Install production dependencies.
-RUN pip install --no-cache-dir -r requirements.txt
+#RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 RUN spacy download en_core_web_lg
+
+# download clip model to model/
+#RUN mkdir -p model
+#RUN wget -O model/clip.model https://huggingface.co/openai/clip-vit-base-patch32/resolve/main/pytorch_model.bin
 
 ENV PORT 5000
 EXPOSE $PORT
