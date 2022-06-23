@@ -124,8 +124,7 @@ class FeatureExtractor:
 
 
 async def main():
-    extractor = FeatureExtractor(
-        "openai/clip-vit-base-patch32", "cpu", overwrite=True)
+    extractor = FeatureExtractor(overwrite=True)
     extractor.load_model()
     testImagePath = '../data/images/0a31a3a2db774c200ce3e1eaa391af78.jpg'
     features = extractor.extract_features(testImagePath)

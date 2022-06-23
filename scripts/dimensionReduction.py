@@ -40,18 +40,19 @@ class DimensionReduction:
         dataframe.to_csv("{}/{}.csv".format(path, name), index=False)
         self.logger.info("Saved embedding to {}".format(path))
 
+    # @duration
     def rasterfairy(self, embedding):
         self.logger.info('Rasterfairy')
-        umap = (embedding + 1)/2
+        cloud = (embedding + 1)/2
         try:
-            umap = coonswarp.rectifyCloud(umap,
+            cloud = coonswarp.rectifyCloud(cloud,
                 perimeterSubdivisionSteps=4,
                 autoPerimeterOffset=False,
                 paddingScale=1.05)
         except Exception as error:
-            print(timestamp(), 'Coonswarp rectification failed', error)
-        pos = rasterfairy.transformPointCloud2D(umap)[0]
-        return pos
+            self.logger.error('Coonswarp rectification failed', error)
+        positions = rasterfairy.transformPointCloud2D(cloud)[0]
+        return positions
 
 if __name__ == "__main__":
     umap = DimensionReduction(n_neighbors=2, min_dist=0.1)

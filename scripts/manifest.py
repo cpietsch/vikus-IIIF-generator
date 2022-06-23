@@ -158,7 +158,7 @@ class Manifest:
             arr['id'] = self.getId()
             arr['thumbnail'] = self.getThumbnailUrl()
             # arr['image'] = self.getImageUrl()
-            # hack for welcome collection
+            # hack for welcome collection: use custom size to trick the cache
             arr['image'] = self.getLargeImageUrl(1025)
             arr['largeImage'] = self.getLargeImageUrl()
 
@@ -172,14 +172,14 @@ class Manifest:
             self.logger.warning("no metadata found for {}".format(self))
             return None
 
-        arr['label'] = self.label
-        arr['iiif'] = self.id
+        arr['_label'] = self.label
+        arr['_iiif'] = self.id
 
         try:
             for item in metadata:
                 label = next(iter(item.get('label').values()))[0]
                 value = next(iter(item.get('value').values()))[0]
-                arr[label] = value
+                arr["_" + label] = value
         except:
             self.logger.warning("error in metadata {}".format(self))
 

@@ -7,8 +7,8 @@ import pandas as pd
 
 class MetadataExtractor:
     def __init__(self, *args, **kwargs):
-        self.logger = kwargs.get('logger', logging.getLogger('rich'))
-        self.nlp = spacy.load("en_core_web_lg")
+        self.logger = kwargs.get('logger', logging.getLogger('MetadataExtractor'))
+        self.nlp = spacy.load("en_core_web_lg") #spacy.load("en_core_web_lg")
         self.nlp.add_pipe("yake")
 
     def extract(self, manifests):
@@ -16,7 +16,7 @@ class MetadataExtractor:
         metadataList = []
         for manifest in manifests:
             metadata = manifest.getMetadata()
-            metadata['keywords'] = self.getKeywords(metadata['label'])
+            metadata['keywords'] = self.getKeywords(metadata['_label'])
             metadataList.append(metadata)
         return metadataList
 
@@ -31,14 +31,39 @@ class MetadataExtractor:
         dataframe = pd.DataFrame(metadataList)
         dataframe.to_csv(file, index=False)
 
+    def makeDetailStructure(self, metadataList):
+        self.logger.debug("making detail structure")
+        ''' structure: 
+             {
+                "name": "Description",
+                "source": "_description",
+                "display": "column",
+                "type": "text"
+            },
+        '''
+        detailStructure = {}
+        for metadata in metadataList:
+            for key, value in metadata.items():
+                if key not in detailStructure:
+                    detailStructure[key] = {
+                        "name": key,
+                        "source": key,
+                        "display": "column",
+                        "type": "text"
+                    }
+        #print(detailStructure)
+        return detailStructure
+
 
 async def main():
     from vikus import url, crawlCollection
 
     manifests = await crawlCollection(url, "test")
+    manifests = manifests[:10]
     metadataExtractor = MetadataExtractor()
     metadata = metadataExtractor.extract(manifests)
-    print(metadata)
+    details = metadataExtractor.makeDetailStructure(metadata)
+    #print(metadata)
 
     #metadataExtractor.saveToCsv(metadata, "metadata.csv")
 

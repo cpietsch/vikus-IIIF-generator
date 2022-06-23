@@ -153,6 +153,7 @@ async def make_metadata(instance_id: str):
     manifests = InstanceManager[instance_id]["manifests"]
     path = config["path"]
     metadata = await makeMetadata(manifests, instance_id, path)
+    saveConfig(config, metadata["metadata"])
 
     config["status"] = "metadata"
     config["metadataFile"] = metadata["file"]

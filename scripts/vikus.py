@@ -79,7 +79,7 @@ def create_info_md(config):
     with open(infoPath, "w") as f:
         f.write("# {}\n{}\n".format(config["label"], config["iiif_url"]))
 
-def create_data_json(config):
+def create_data_json(config, metadata=None):
     path = config['path']
     dataPath = os.path.join(path, "config.json")
     # load json from "files/data.json"
@@ -91,6 +91,10 @@ def create_data_json(config):
     if "images" in config:
         columns = math.isqrt(int(config["images"] * 1.4))
     data["projection"]["columns"] = columns
+
+    # this needs to be refactored
+    if metadata is not None:
+        data["detail"]["structure"] = metadataExtractor.makeDetailStructure(metadata)
 
     with open(dataPath, "w") as f:
         f.write(json.dumps(data, indent=4))
@@ -158,7 +162,7 @@ async def makeMetadata(manifests, instanceId, path):
     metadata = metadataExtractor.extract(manifests)
     metadataExtractor.saveToCsv(metadata, file)
 
-    return {'file': file}
+    return {'file': file, 'metadata': metadata}
 
 
 @duration
@@ -198,12 +202,13 @@ async def test(url, path, instanceId):
     # print(images)
 
 
-def saveConfig(config):
+def saveConfig(config, metadata=None):
     with open(os.path.join(config['path'], "instance.json"), "w") as f:
         f.write(json.dumps(config, indent=4))
     
+    # this needs to be outside of this function
     create_info_md(config)
-    create_data_json(config)
+    create_data_json(config, metadata)
 
 
 if __name__ == "__main__":
