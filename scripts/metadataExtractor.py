@@ -55,7 +55,7 @@ class MetadataExtractor:
                     detailStructure[key] = {
                         "name": key,
                         "source": key,
-                        "display": "column",
+                        "display": "wide",
                         "type": "text"
                     }
         return detailStructure
