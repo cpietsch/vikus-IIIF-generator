@@ -208,7 +208,6 @@ async def make_umap(instance_id: str, n_neighbors: int = 15, min_distance: float
 
     path = config["path"]
 
-    #print("make_umap", instance_id, n_neighbors, min_distance)
     await makeUmap(features, instance_id, path, ids, n_neighbors, min_distance)
 
     config["status"] = "umap"
@@ -347,3 +346,4 @@ if __name__ == "__main__":
         reload=True,
         # log_level="debug"
     )
+    # asyncio.run(app())
