@@ -36,6 +36,8 @@ from manifest import Manifest
 # from features import FeatureExtractor
 # from dimensionReductor import DimensionReductor
 from sharpsheet import Sharpsheet
+from featureExtractor import FeatureExtractor
+from metadataExtractor import MetadataExtractor
 
 import pandas as pd
 from pandas.io.json import json_normalize
@@ -63,18 +65,13 @@ logger = logging.getLogger('rich')
 cache = Cache()
 # cache.clear()
 
-#url = "https://iiif.wellcomecollection.org/presentation/v3/collections/genres"
-#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Broadsides"
-#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Myths_and_legends"
-#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Advertisements"
-#url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Stickers"
 url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Watercolors"
-#url = "https://iiif.bodleian.ox.ac.uk/iiif/manifest/e32a277e-91e2-4a6d-8ba6-cc4bad230410.json"
 
-from featureExtractor import FeatureExtractor
-featureExtractor = FeatureExtractor(
-    "openai/clip-vit-base-patch32", "cpu", cache=cache, overwrite=False)
+featureExtractor = FeatureExtractor(cache=cache, overwrite=False)
 featureExtractor.load_model()
+#featureExtractor.save_model()
+
+metadataExtractor = MetadataExtractor()
 
 def create_info_md(config):
     path = config['path']
@@ -82,7 +79,7 @@ def create_info_md(config):
     with open(infoPath, "w") as f:
         f.write("# {}\n{}\n".format(config["label"], config["iiif_url"]))
 
-def create_data_json(config):
+def create_data_json(config, metadata=None):
     path = config['path']
     dataPath = os.path.join(path, "config.json")
     # load json from "files/data.json"
@@ -94,6 +91,10 @@ def create_data_json(config):
     if "images" in config:
         columns = math.isqrt(int(config["images"] * 1.4))
     data["projection"]["columns"] = columns
+
+    # this needs to be refactored
+    if metadata is not None:
+        data["detail"]["structure"] = metadataExtractor.makeDetailStructure(metadata)
 
     with open(dataPath, "w") as f:
         f.write(json.dumps(data, indent=4))
@@ -158,9 +159,10 @@ async def crawlImages(manifests, instanceId, numWorkers=IMAGEWORKERS):
 @duration
 async def makeMetadata(manifests, instanceId, path):
     file = path + '/metadata.csv'
-    
+    metadata = metadataExtractor.extract(manifests)
+    metadataExtractor.saveToCsv(metadata, file)
 
-    return {'file': file}
+    return {'file': file, 'metadata': metadata}
 
 
 @duration
@@ -178,24 +180,19 @@ async def makeSpritesheets(files, instanceId, projectPath, spritesheetPath, spri
 
 @duration
 async def makeFeatures(files, instanceId, batchSize):
-    # print("Extracting features import")
-    # from featureExtractor import FeatureExtractor
-    # print("Extracting features")
-
-    # featureExtractor = FeatureExtractor(
-    #     "openai/clip-vit-base-patch32", "cpu", cache=cache, overwrite=False, instanceId=instanceId)
-    # featureExtractor.load_model()
-    #features = await featureExtractor.concurrent_extract_features(files)
     features = await featureExtractor.batch_extract_features_cached(files, batchSize)
     # print(features)
     return features
 
 
 @duration
-async def makeUmap(features, instanceId, path, ids, n_neighbors=15, min_dist=0.2):
+async def makeUmap(features, instanceId, path, ids, n_neighbors=15, min_dist=0.2, raster_fairy=False):
     from dimensionReduction import DimensionReduction
     umaper = DimensionReduction(n_neighbors=n_neighbors, min_dist=min_dist)
     embedding = umaper.fit_transform(features)
+    print(raster_fairy)
+    if raster_fairy:
+        embedding = umaper.rasterfairy(embedding)
     umaper.saveToCsv(embedding, path, ids)
     return path
 
@@ -207,14 +204,14 @@ async def test(url, path, instanceId):
     # print(images)
 
 
-def saveConfig(config):
+def saveConfig(config, metadata=None):
     with open(os.path.join(config['path'], "instance.json"), "w") as f:
         f.write(json.dumps(config, indent=4))
     
+    # this needs to be outside of this function
     create_info_md(config)
-    create_data_json(config)
+    create_data_json(config, metadata)
 
 
 if __name__ == "__main__":
-    asyncio.run(test(
-        url, "../data/{}".format(hashlib.md5(url.encode('utf-8')).hexdigest()), "test"))
+    asyncio.run(test(url, DATA_DIR + "/test", "test"))

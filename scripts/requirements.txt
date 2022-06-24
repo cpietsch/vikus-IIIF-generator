@@ -24,4 +24,4 @@ sse-starlette
 randomname
 spacy
 spacy_ke
-jupyter-lab
+jupyterlab

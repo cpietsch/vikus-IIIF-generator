@@ -6,12 +6,10 @@ import logging
 import numpy as np
 from transformers import CLIPProcessor, CLIPModel
 from rich.progress import track
-
+import os
 
 class FeatureExtractor:
-    def __init__(self, model_name, device, **kwargs):
-        self.model_name = model_name
-        self.device = device
+    def __init__(self, **kwargs):
         self.model = None
         self.processor = None
         self.logger = kwargs.get(
@@ -22,11 +20,18 @@ class FeatureExtractor:
         self.instanceId = kwargs.get('instanceId', None)
 
     @torch.no_grad()
-    def load_model(self):
+    def load_model(self, device="cpu", local=False):
+        self.model_name = local and "models/clip/" or "openai/clip-vit-base-patch32"
+        self.device = device
         if(self.model is None):
-            self.model = CLIPModel.from_pretrained(
-                self.model_name).to(self.device)
+            self.model = CLIPModel.from_pretrained(self.model_name).to(self.device)
             self.processor = CLIPProcessor.from_pretrained(self.model_name)
+    
+    def save_model(self, model_path="models/clip/"):
+        if not os.path.exists(model_path):
+            os.makedirs(model_path)
+        self.model.save_pretrained(model_path)
+        self.processor.save_pretrained(model_path)
 
     def prepareImage(self, image_path, resize=False):
         image = Image.open(image_path)
@@ -119,8 +124,7 @@ class FeatureExtractor:
 
 
 async def main():
-    extractor = FeatureExtractor(
-        "openai/clip-vit-base-patch32", "cpu", overwrite=True)
+    extractor = FeatureExtractor(overwrite=True)
     extractor.load_model()
     testImagePath = '../data/images/0a31a3a2db774c200ce3e1eaa391af78.jpg'
     features = extractor.extract_features(testImagePath)

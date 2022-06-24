@@ -1,0 +1,24 @@
+version: '3.4'
+
+services:
+  vikusdockerGpu:
+    # image: vikusdocker
+    build:
+      context: .
+      dockerfile: DockerfileGpu
+    ports:
+      - 5000:5000
+    volumes:
+      - ./data:/data
+
+  redis:
+    image: "redis:alpine"
+
+  webserver:
+    #image: nginx:alpine
+    build: ./services/nginx
+    ports:
+      - 8000:8000
+    volumes:
+      - ./data:/usr/share/nginx/html/data
+      - ./services/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
