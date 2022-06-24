@@ -4,6 +4,7 @@ FROM python:3.8
 ENV PYTHONUNBUFFERED True
 ENV PORT 5000
 ENV WORKER 4
+ENV TIMEOUT 60
 
 EXPOSE $PORT
 
@@ -29,4 +30,4 @@ RUN git clone https://github.com/cpietsch/sharpsheet /modules/sharpsheet; cd /mo
 RUN exec python downloadModel.py
 
 #CMD exec uvicorn --port :$PORT --workers 1 --threads 8 --timeout 0 main:app
-CMD exec gunicorn main:app -w $WORKER -k uvicorn.workers.UvicornWorker
+CMD exec gunicorn main:app -w $WORKER --timeout $TIMEOUT -k uvicorn.workers.UvicornWorker
