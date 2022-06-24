@@ -94,6 +94,8 @@ def read_instance(instance_id: str):
 @app.post("/instances/crawlCollection")
 async def crawl_collection(instance_id: str, workers: int = 3, depth: int = 0):
     config = read_instance(instance_id)
+    if config is None:
+        return {"error": "Instance {} doesn't exist".format(instance_id)}, 404
 
     manifests = await crawlCollection(
         config["iiif_url"],
@@ -119,9 +121,8 @@ async def crawl_collection(instance_id: str, workers: int = 3, depth: int = 0):
 
 @app.post("/instances/crawlImages") 
 async def crawl_images(instance_id: str, worker: int = 3):
-    print("/instances/crawlImages")
-    print(instance_id)
-    if instance_id not in InstanceManager:
+
+    if instance_id not in InstanceManager or "manifests" not in InstanceManager[instance_id]:
         await crawl_collection(instance_id)
 
     config = InstanceManager[instance_id]["config"]
@@ -143,13 +144,10 @@ async def crawl_images(instance_id: str, worker: int = 3):
 
 @app.post("/instances/makeMetadata")
 async def make_metadata(instance_id: str):
-    if instance_id not in InstanceManager:
+    if instance_id not in InstanceManager or "manifests" not in InstanceManager[instance_id]:
         await crawl_collection(instance_id)
 
     config = InstanceManager[instance_id]["config"]
-    if config["manifests"] == 0:
-        return {"error": "Instance {} doesn't have any manifests".format(instance_id)}, 404
-
     manifests = InstanceManager[instance_id]["manifests"]
     path = config["path"]
     metadata = await makeMetadata(manifests, instance_id, path)
@@ -163,7 +161,7 @@ async def make_metadata(instance_id: str):
 
 @app.post("/instances/makeSpritesheets")
 async def make_spritesheets(instance_id: str, spriteSize: int = 128):
-    if instance_id not in InstanceManager:
+    if instance_id not in InstanceManager or "images" not in InstanceManager[instance_id]:
         await crawl_images(instance_id)
 
     config = InstanceManager[instance_id]["config"]
@@ -180,7 +178,7 @@ async def make_spritesheets(instance_id: str, spriteSize: int = 128):
 
 @app.post("/instances/makeFeatures")
 async def make_features(instance_id: str, batchSize: int = 64):
-    if instance_id not in InstanceManager:
+    if instance_id not in InstanceManager or "images" not in InstanceManager[instance_id]:
         await crawl_images(instance_id)
 
     config = InstanceManager[instance_id]["config"]
@@ -198,8 +196,8 @@ async def make_features(instance_id: str, batchSize: int = 64):
 
 
 @app.post("/instances/makeUmap")
-async def make_umap(instance_id: str, n_neighbors: int = 15, min_distance: float = 0.1):
-    if instance_id not in InstanceManager:
+async def make_umap(instance_id: str, n_neighbors: int = 15, min_distance: float = 0.1, raster_fairy: bool = False):
+    if instance_id not in InstanceManager or "features" not in InstanceManager[instance_id]:
         await make_features(instance_id)
 
     config = InstanceManager[instance_id]["config"]
@@ -208,7 +206,7 @@ async def make_umap(instance_id: str, n_neighbors: int = 15, min_distance: float
 
     path = config["path"]
 
-    await makeUmap(features, instance_id, path, ids, n_neighbors, min_distance)
+    await makeUmap(features, instance_id, path, ids, n_neighbors, min_distance, raster_fairy)
 
     config["status"] = "umap"
 

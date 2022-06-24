@@ -186,12 +186,14 @@ async def makeFeatures(files, instanceId, batchSize):
 
 
 @duration
-async def makeUmap(features, instanceId, path, ids, n_neighbors=15, min_dist=0.2):
+async def makeUmap(features, instanceId, path, ids, n_neighbors=15, min_dist=0.2, raster_fairy=False):
     from dimensionReduction import DimensionReduction
     umaper = DimensionReduction(n_neighbors=n_neighbors, min_dist=min_dist)
     embedding = umaper.fit_transform(features)
-    fairy = umaper.rasterfairy(embedding)
-    umaper.saveToCsv(fairy, path, ids)
+    print(raster_fairy)
+    if raster_fairy:
+        embedding = umaper.rasterfairy(embedding)
+    umaper.saveToCsv(embedding, path, ids)
     return path
 
 
