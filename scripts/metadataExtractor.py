@@ -3,18 +3,19 @@ import logging
 import spacy
 import spacy_ke
 import pandas as pd
+from rich.progress import track
 
 
 class MetadataExtractor:
     def __init__(self, *args, **kwargs):
         self.logger = kwargs.get('logger', logging.getLogger('MetadataExtractor'))
-        self.nlp = spacy.load("en_core_web_lg") #spacy.load("en_core_web_lg")
+        self.nlp = spacy.load("en_core_web_lg") #spacy.load("en_core_web_md")
         self.nlp.add_pipe("yake")
 
     def extract(self, manifests):
         self.logger.debug("extracting")
         metadataList = []
-        for manifest in manifests:
+        for manifest in track(manifests, description="Extracting keywords and metadata"):
             metadata = manifest.getMetadata()
             metadata['keywords'] = self.getKeywords(metadata['_label'])
             metadataList.append(metadata)
@@ -51,7 +52,6 @@ class MetadataExtractor:
                         "display": "column",
                         "type": "text"
                     }
-        #print(detailStructure)
         return detailStructure
 
 
@@ -59,7 +59,7 @@ async def main():
     from vikus import url, crawlCollection
 
     manifests = await crawlCollection(url, "test")
-    manifests = manifests[:10]
+    #manifests = manifests[:10]
     metadataExtractor = MetadataExtractor()
     metadata = metadataExtractor.extract(manifests)
     details = metadataExtractor.makeDetailStructure(metadata)
