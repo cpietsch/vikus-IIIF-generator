@@ -69,15 +69,16 @@ url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Water
 
 featureExtractor = FeatureExtractor(cache=cache, overwrite=False)
 featureExtractor.load_model()
-#featureExtractor.save_model()
 
 metadataExtractor = MetadataExtractor()
+
 
 def create_info_md(config):
     path = config['path']
     infoPath = os.path.join(path, "info.md")
     with open(infoPath, "w") as f:
         f.write("# {}\n{}\n".format(config["label"], config["iiif_url"]))
+
 
 def create_data_json(config, metadata=None):
     path = config['path']
@@ -94,7 +95,8 @@ def create_data_json(config, metadata=None):
 
     # this needs to be refactored
     if metadata is not None:
-        data["detail"]["structure"] = metadataExtractor.makeDetailStructure(metadata)
+        data["detail"]["structure"] = metadataExtractor.makeDetailStructure(
+            metadata)
 
     with open(dataPath, "w") as f:
         f.write(json.dumps(data, indent=4))
@@ -207,7 +209,7 @@ async def test(url, path, instanceId):
 def saveConfig(config, metadata=None):
     with open(os.path.join(config['path'], "instance.json"), "w") as f:
         f.write(json.dumps(config, indent=4))
-    
+
     # this needs to be outside of this function
     create_info_md(config)
     create_data_json(config, metadata)

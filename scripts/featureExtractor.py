@@ -8,6 +8,7 @@ from transformers import CLIPProcessor, CLIPModel
 from rich.progress import track
 import os
 
+
 class FeatureExtractor:
     def __init__(self, **kwargs):
         self.model = None
@@ -20,13 +21,14 @@ class FeatureExtractor:
         self.instanceId = kwargs.get('instanceId', None)
 
     @torch.no_grad()
-    def load_model(self, device="cpu", local=False):
+    def load_model(self, device="cpu", local=True):
         self.model_name = local and "models/clip/" or "openai/clip-vit-base-patch32"
         self.device = device
         if(self.model is None):
-            self.model = CLIPModel.from_pretrained(self.model_name).to(self.device)
+            self.model = CLIPModel.from_pretrained(
+                self.model_name).to(self.device)
             self.processor = CLIPProcessor.from_pretrained(self.model_name)
-    
+
     def save_model(self, model_path="models/clip/"):
         if not os.path.exists(model_path):
             os.makedirs(model_path)
@@ -64,9 +66,9 @@ class FeatureExtractor:
             self.logger.debug("Caching features for {}".format(id))
             await self.cache.saveFeatures(id, features)
         return features
-    
+
     @torch.no_grad()
-    async def batch_extract_features_cached(self, imageList, batchSize = 64):
+    async def batch_extract_features_cached(self, imageList, batchSize=64):
         featuresList = []
         idList = []
         queueList = []
@@ -80,7 +82,8 @@ class FeatureExtractor:
                 queueList.append((id, path))
         print("{}/{} images found in cache".format(len(featuresList), len(imageList)))
         if(len(queueList) > 0):
-            self.logger.debug("Extracting features for {}".format(len(queueList)))
+            self.logger.debug(
+                "Extracting features for {}".format(len(queueList)))
             (ids, features) = await self.batch_extract_features(queueList, batchSize)
             featuresList.extend(features)
             idList.extend(ids)
@@ -89,16 +92,17 @@ class FeatureExtractor:
                 await self.cache.saveFeatures(id, feature)
         return (idList, featuresList)
 
-
     @torch.no_grad()
-    async def batch_extract_features(self, imageList, batchSize = 64):
+    async def batch_extract_features(self, imageList, batchSize=64):
         self.logger.debug("Extracting features of {}".format(len(imageList)))
         features = []
         ids = []
 
-        batchedImageList = [imageList[i:i + batchSize] for i in range(0, len(imageList), batchSize)]
+        batchedImageList = [imageList[i:i + batchSize]
+                            for i in range(0, len(imageList), batchSize)]
         for batch in track(batchedImageList, total=len(batchedImageList), description="Extracting features in batches"):
-            images = [self.prepareImage(image_path) for (id, image_path) in batch]
+            images = [self.prepareImage(image_path)
+                      for (id, image_path) in batch]
             inputs = self.processor(
                 images=images, return_tensors="pt", padding=True)
             outputs = self.model.get_image_features(**inputs)
@@ -126,7 +130,7 @@ class FeatureExtractor:
 async def main():
     extractor = FeatureExtractor(overwrite=True)
     extractor.load_model()
-    testImagePath = '../data/images/0a31a3a2db774c200ce3e1eaa391af78.jpg'
+    testImagePath = 'files/test.png'
     features = extractor.extract_features(testImagePath)
     print(features.shape)
     features2 = await extractor.get_features('test', testImagePath)
