@@ -9,10 +9,11 @@ from rich.progress import track
 class MetadataExtractor:
     def __init__(self, *args, **kwargs):
         self.logger = kwargs.get('logger', logging.getLogger('MetadataExtractor'))
+        self.nlp = None
         
     def load(self):
         if self.nlp is None:
-            self.nlp = spacy.load("en_core_web_lg") #spacy.load("en_core_web_md")
+            self.nlp = spacy.load("en_core_web_sm") #spacy.load("en_core_web_md")
             self.nlp.add_pipe("yake")
         
     def extract(self, manifests, extract_keywords = True, runOnAllFields = True):

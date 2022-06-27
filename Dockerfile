@@ -15,7 +15,7 @@ WORKDIR /scripts
 # Install production dependencies.
 RUN pip install --no-cache-dir -r requirements.txt
 #RUN spacy download en_core_web_md
-RUN spacy download en_core_web_lg
+RUN spacy download en_core_web_sm
 
 # download clip model to model/
 #RUN mkdir -p model
