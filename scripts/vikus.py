@@ -159,9 +159,9 @@ async def crawlImages(manifests, instanceId, numWorkers=IMAGEWORKERS):
 
 
 @duration
-async def makeMetadata(manifests, instanceId, path):
+async def makeMetadata(manifests, instanceId, path, extract_keywords=True):
     file = path + '/metadata.csv'
-    metadata = metadataExtractor.extract(manifests)
+    metadata = metadataExtractor.extract(manifests, extract_keywords=extract_keywords)
     metadataExtractor.saveToCsv(metadata, file)
 
     return {'file': file, 'metadata': metadata}

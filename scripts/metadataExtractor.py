@@ -12,17 +12,18 @@ class MetadataExtractor:
         self.nlp = spacy.load("en_core_web_lg") #spacy.load("en_core_web_md")
         self.nlp.add_pipe("yake")
 
-    def extract(self, manifests, runOnAllFields = True):
+    def extract(self, manifests, extract_keywords = True, runOnAllFields = True):
         self.logger.debug("extracting")
         metadataList = []
         for manifest in track(manifests, description="Extracting keywords and metadata"):
             metadata = manifest.getMetadata()
-            keywords = []
-            if runOnAllFields:
-                dynamicMetadata = [ value for key, value in metadata.items() if key.startswith("_") ]
-                keywords = self.getKeywords(",".join(dynamicMetadata))
-            else:
-                keywords = self.getKeywords(metadata['_label'])
+            keywords = "None"
+            if extract_keywords:
+                if runOnAllFields:
+                    dynamicMetadata = [ value for key, value in metadata.items() if key.startswith("_") ]
+                    keywords = self.getKeywords(",".join(dynamicMetadata))
+                else:
+                    keywords = self.getKeywords(metadata['_label'])
             metadata['keywords'] = keywords
             metadataList.append(metadata)
         return metadataList
