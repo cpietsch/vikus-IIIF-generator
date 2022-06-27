@@ -30,7 +30,7 @@ pretty.install()
 
 DATA_DIR = "../data"
 DATA_IMAGES_DIR = "../data/images"
-MANIFESTWORKERS = 2
+MANIFESTWORKERS = 4
 IMAGEWORKERS = 4
 
 debug = False
@@ -118,7 +118,7 @@ async def crawlCollection(url, instanceId, numWorkers=MANIFESTWORKERS, limitRecu
         instanceId=instanceId
     )
     await manifestCrawler.crawl(manifest)
-    manifests = manifest.getFlatList(type='Canvas')
+    manifests = manifest.getFlatList()
 
     return manifests
 
