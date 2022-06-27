@@ -37,7 +37,7 @@ class Cache:
             try:
                 if session is None:
                     response = requests.get(url).text
-                    return text.encode('utf-8')
+                    return response.encode('utf-8')
 
                 async with session.get(url) as response:
                     text = await response.text(encoding='utf-8')
