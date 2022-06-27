@@ -1,4 +1,5 @@
-from typing import List
+from enum import IntEnum
+from typing import List, Union
 import asyncio
 from imp import reload
 import json
@@ -7,15 +8,16 @@ from warnings import catch_warnings
 from zipfile import ZipFile
 import zipfile
 from torch import absolute
+from traitlets import Integer
 import uvicorn
-from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from sse_starlette.sse import EventSourceResponse
 from pathlib import Path
 from aioredis import Redis
 from fastapi.params import Depends
-import async_timeout
+
 
 
 import os
@@ -36,7 +38,12 @@ DATA_DIR = "../data"
 
 # cache = Cache()
 
-app = FastAPI()
+app = FastAPI(
+    # title="Vikus Docker",
+    # description="https://github.com/cpietsch/vikus-docker",
+    # version="0.0.1",
+    # license_info="MIT",
+)
 manager = ConnectionManager()
 
 origins = [
@@ -77,6 +84,12 @@ def list_instances():
         instances.append(instance)
     return instances
 
+@app.post("/instances")
+async def create_instance(url: str, label: str = None):
+    config = create_config_json(url, label)
+
+    print(config)
+    return config
 
 @app.get("/instances/{instance_id}")
 def read_instance(instance_id: str):
@@ -91,16 +104,25 @@ def read_instance(instance_id: str):
     return config
 
 
-@app.post("/instances/crawlCollection")
-async def crawl_collection(instance_id: str, workers: int = 3, depth: int = 0):
+@app.post("/instances/steps/collection")
+async def crawl_collection(
+        instance_id: str = Query(title="Instance ID", description="Instance ID"),
+        worker: int = Query(default=3,title="Workers", description="Number of workers"),
+        depth: int  = Query(default=0,title="Depth", description="Recursive crawl depth", min=0, max=100),
+    ):
+    """
+    Crawl a collection and save it to the given instance.
+    """ 
     config = read_instance(instance_id)
     if config is None:
         return {"error": "Instance {} doesn't exist".format(instance_id)}, 404
 
+    
+
     manifests = await crawlCollection(
         config["iiif_url"],
         instance_id,
-        workers,
+        worker,
         depth
     )
 
@@ -119,9 +141,14 @@ async def crawl_collection(instance_id: str, workers: int = 3, depth: int = 0):
     return config
 
 
-@app.post("/instances/crawlImages") 
-async def crawl_images(instance_id: str, worker: int = 3):
-
+@app.post("/instances/steps/images") 
+async def crawl_images(
+        instance_id: str = Query(title="Instance ID", description="Instance ID"),
+        worker: int = Query(3,title="Workers", description="Number of workers")
+    ):
+    """
+    Crawl the images of a collection and save them to the given instance.
+    """
     if instance_id not in InstanceManager or "manifests" not in InstanceManager[instance_id]:
         await crawl_collection(instance_id)
 
@@ -142,8 +169,8 @@ async def crawl_images(instance_id: str, worker: int = 3):
     return config
 
 
-@app.post("/instances/makeMetadata")
-async def make_metadata(instance_id: str):
+@app.post("/instances/steps/metadata")
+async def make_metadata(instance_id: str = Query(title="Instance ID", description="Instance ID")):
     if instance_id not in InstanceManager or "manifests" not in InstanceManager[instance_id]:
         await crawl_collection(instance_id)
 
@@ -159,8 +186,10 @@ async def make_metadata(instance_id: str):
     return config
 
 
-@app.post("/instances/makeSpritesheets")
-async def make_spritesheets(instance_id: str, spriteSize: int = 128):
+@app.post("/instances/steps/spritesheets")
+async def make_spritesheets(
+        instance_id: str = Query(title="Instance ID", description="Instance ID")
+    ):
     if instance_id not in InstanceManager or "images" not in InstanceManager[instance_id]:
         await crawl_images(instance_id)
 
@@ -169,15 +198,18 @@ async def make_spritesheets(instance_id: str, spriteSize: int = 128):
     files = [os.path.abspath(path) for (id, path) in images]
     spritesheetPath = config["spritesheetPath"]
     projectPath = config["path"]
-    await makeSpritesheets(files, instance_id, projectPath, spritesheetPath, spriteSize)
+    await makeSpritesheets(files, instance_id, projectPath, spritesheetPath)
 
     config["status"] = "spritesheets"
 
     return config
 
 
-@app.post("/instances/makeFeatures")
-async def make_features(instance_id: str, batchSize: int = 64):
+@app.post("/instances/steps/features")
+async def make_features(
+        instance_id: str = Query(title="Instance ID", description="Instance ID"),
+        batchSize: int = Query(64,title="Batch Size", description="Batch size for the feature extraction"),
+    ):
     if instance_id not in InstanceManager or "images" not in InstanceManager[instance_id]:
         await crawl_images(instance_id)
 
@@ -195,8 +227,13 @@ async def make_features(instance_id: str, batchSize: int = 64):
     return config
 
 
-@app.post("/instances/makeUmap")
-async def make_umap(instance_id: str, n_neighbors: int = 15, min_distance: float = 0.1, raster_fairy: bool = False):
+@app.post("/instances/steps/similarity")
+async def make_umap(
+        instance_id: str = Query(title="Instance ID", description="Instance ID"),
+        n_neighbors: int = Query(15,title="Neighbors", description="Number of neighbors"),
+        min_distance: float = Query(0.1,title="Min Distance", description="Minimum distance"),
+        raster_fairy: bool = Query(False,title="Raster Fairy", description="Use raster fairy"),
+    ):
     if instance_id not in InstanceManager or "features" not in InstanceManager[instance_id]:
         await make_features(instance_id)
 
@@ -212,24 +249,7 @@ async def make_umap(instance_id: str, n_neighbors: int = 15, min_distance: float
 
     return config
 
-
-@app.post("/instances/run")
-async def run(instance_id: str):
-    # run all steps
-    await crawl_collection(instance_id)
-    await crawl_images(instance_id)
-    await make_metadata(instance_id)
-    await make_spritesheets(instance_id)
-    await make_features(instance_id)
-    await make_umap(instance_id)
-
-    config = InstanceManager[instance_id]["config"]
-    config["status"] = "umap"
-
-    return config
-
-
-@app.post("/instances/makeZip")
+@app.post("/instances/steps/zip")
 async def make_zip(instance_id: str):
     if instance_id not in InstanceManager:
         await run(instance_id)
@@ -254,21 +274,32 @@ async def make_zip(instance_id: str):
     return config
 
 
+@app.post("/instances/generate")
+async def run(instance_id: str = Query(title="Instance ID", description="Instance ID")):
+    # run all steps
+    print("Running instance {}".format(instance_id))
+    await crawl_collection(instance_id, worker=4, depth=0)
+    await crawl_images(instance_id, worker=4)
+    await make_metadata(instance_id)
+    await make_spritesheets(instance_id)
+    await make_features(instance_id, batchSize=64)
+    await make_umap(instance_id, n_neighbors=15, min_distance=0.1, raster_fairy=False)
+
+    config = InstanceManager[instance_id]["config"]
+    config["status"] = "umap"
+
+    return config
+
+
+
 @app.delete("/instances/{instance_id}")
-def delete_instance(instance_id: str):
+def delete_instance(instance_id: str = Query(title="Instance ID", description="Instance ID")):
     path = os.path.join(DATA_DIR, instance_id)
     if not os.path.isdir(path):
         return {"error": "Instance {} doesn't exist".format(instance_id)}, 404
     shutil.rmtree(path)
     return {"id": instance_id, "absolutePath": path, "label": instance_id, "status": "deleted"}
 
-
-@app.post("/instances")
-async def create_instance(url: str, label: str = None):
-    config = create_config_json(url, label)
-
-    print(config)
-    return config
 
 
 @app.websocket("/instances/{instance_id}/ws")
