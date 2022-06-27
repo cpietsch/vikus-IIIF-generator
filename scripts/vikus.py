@@ -1,27 +1,13 @@
-
-# from PIL import Image
-import requests
 import json
 import os
 import time
 import logging
-import sys
-# from flask import Flask, request, jsonify
-# from flask_cors import CORS
-# from transformers import CLIPProcessor, CLIPModel, CLIPTokenizer
 import asyncio
-import aiohttp
-import random
-import traceback
-import hashlib
 import randomname
 import math
 
-import numpy as np
-
 from rich import pretty
 from rich.logging import RichHandler
-from rich.progress import Progress
 
 # from rich.console import Console
 # from rich.theme import Theme
@@ -33,15 +19,12 @@ from imageCrawler import ImageCrawler
 from cache import Cache
 from helpers import *
 from manifest import Manifest
-# from features import FeatureExtractor
-# from dimensionReductor import DimensionReductor
 from sharpsheet import Sharpsheet
 from featureExtractor import FeatureExtractor
 from metadataExtractor import MetadataExtractor
 
 import pandas as pd
 from pandas.io.json import json_normalize
-import uuid
 
 pretty.install()
 
@@ -65,12 +48,9 @@ logger = logging.getLogger('rich')
 cache = Cache()
 # cache.clear()
 
-url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Watercolors"
-
-featureExtractor = FeatureExtractor(cache=cache, overwrite=False)
-featureExtractor.load_model()
-
 metadataExtractor = MetadataExtractor()
+
+url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Watercolors"
 
 
 def create_info_md(config):
@@ -92,7 +72,6 @@ def create_data_json(config, metadata=None):
     if "images" in config:
         columns = math.isqrt(int(config["images"] * 1.4))
     data["projection"]["columns"] = columns
-
     # this needs to be refactored
     if metadata is not None:
         data["detail"]["structure"] = metadataExtractor.makeDetailStructure(
@@ -182,6 +161,8 @@ async def makeSpritesheets(files, instanceId, projectPath, spritesheetPath, spri
 
 @duration
 async def makeFeatures(files, instanceId, batchSize):
+    featureExtractor = FeatureExtractor(cache=cache, overwrite=False)
+    featureExtractor.load_model()
     features = await featureExtractor.batch_extract_features_cached(files, batchSize)
     # print(features)
     return features

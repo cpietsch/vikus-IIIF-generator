@@ -18,8 +18,6 @@ from pathlib import Path
 from aioredis import Redis
 from fastapi.params import Depends
 
-
-
 import os
 import math
 import logging
@@ -29,7 +27,7 @@ import shutil
 import uuid
 
 # from cache import Cache
-from vikus import create_config_json, crawlCollection, create_data_json, crawlImages, makeMetadata, makeSpritesheets, saveConfig, create_info_md, makeFeatures, makeUmap, cache
+from vikus import create_config_json, crawlCollection, crawlImages, makeMetadata, makeSpritesheets, saveConfig, create_info_md, makeFeatures, makeUmap, cache
 from connectionManager import ConnectionManager
 
 LOGGER = logging.getLogger(__name__)
@@ -169,7 +167,7 @@ async def crawl_images(
     Download all thubmnail images from a IIIF collection.
     """
     if instance_id not in InstanceManager or "manifests" not in InstanceManager[instance_id]:
-        await crawl_collection(instance_id)
+        await crawl_collection(instance_id, worker=DEFAULTS["collection"]["worker"], depth=DEFAULTS["collection"]["depth"])
 
     config = InstanceManager[instance_id]["config"]
 
@@ -199,7 +197,7 @@ async def make_metadata(
     """
     # print(extract_keywords)
     if instance_id not in InstanceManager or "manifests" not in InstanceManager[instance_id]:
-        await crawl_collection(instance_id)
+        await crawl_collection(instance_id, worker=DEFAULTS["collection"]["worker"], depth=DEFAULTS["collection"]["depth"])
 
     config = InstanceManager[instance_id]["config"]
     manifests = InstanceManager[instance_id]["manifests"]
@@ -221,7 +219,7 @@ async def make_spritesheets(
     Create a spritesheet for all images in a IIIF collection given the downloaded thumbnails.
     """
     if instance_id not in InstanceManager or "images" not in InstanceManager[instance_id]:
-        await crawl_images(instance_id)
+        await crawl_images(instance_id, worker=DEFAULTS["images"]["worker"])
 
     config = InstanceManager[instance_id]["config"]
     images = InstanceManager[instance_id]["images"]
@@ -244,7 +242,7 @@ async def make_features(
     Create a CLIP features fo all images in a IIIF collection given the downloaded thumbnails.
     """
     if instance_id not in InstanceManager or "images" not in InstanceManager[instance_id]:
-        await crawl_images(instance_id)
+        await crawl_images(instance_id, worker=DEFAULTS["images"]["worker"])
 
     config = InstanceManager[instance_id]["config"]
     images = InstanceManager[instance_id]["images"]
@@ -271,7 +269,7 @@ async def make_umap(
     Create a UMAP embedding based on the CLIP features.
     """
     if instance_id not in InstanceManager or "features" not in InstanceManager[instance_id]:
-        await make_features(instance_id)
+        await make_features(instance_id, batch_size=DEFAULTS["features"]["batch_size"])
 
     config = InstanceManager[instance_id]["config"]
     images = InstanceManager[instance_id]["images"]
