@@ -1,13 +1,14 @@
 import asyncio
+from ctypes import resize
 import struct
 from PIL import Image
 import torch
 import logging
 import numpy as np
-from transformers import CLIPProcessor, CLIPModel
+from transformers import CLIPProcessor, CLIPModel, CLIPFeatureExtractor
+#from transformers import AutoFeatureExtractor
 from rich.progress import track
 import os
-
 
 class FeatureExtractor:
     def __init__(self, **kwargs):
@@ -49,7 +50,7 @@ class FeatureExtractor:
         # print(image)
         # print(image.size)
         inputs = self.processor(
-            images=image, return_tensors="pt", padding=True)
+            images=image, return_tensors="pt", padding=True, resize=True)
         outputs = self.model.get_image_features(**inputs)
         detached = outputs.detach().numpy()
         return detached[0]

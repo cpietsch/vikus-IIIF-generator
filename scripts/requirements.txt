@@ -1,12 +1,9 @@
-Flask
-flask_restful
 gunicorn
 transformers
 Pillow
 torch
 torchvision
 redis
-flask-cors
 rich
 aiohttp
 asyncio
@@ -17,10 +14,9 @@ yale-dhlab-rasterfairy
 fire
 markupsafe
 flask-restful-swagger
-fastapi[all]
+fastapi
 uvicorn[standard]
 aioredis
-sse-starlette
 randomname
 spacy
 spacy_ke

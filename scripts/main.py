@@ -12,10 +12,9 @@ from traitlets import Integer
 import uvicorn
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
-from sse_starlette.sse import EventSourceResponse
+#from fastapi.responses import StreamingResponse
+#from sse_starlette.sse import EventSourceResponse
 from pathlib import Path
-from aioredis import Redis
 from fastapi.params import Depends
 
 import os
