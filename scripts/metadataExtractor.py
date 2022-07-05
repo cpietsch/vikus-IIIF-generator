@@ -8,15 +8,17 @@ from rich.progress import track
 
 class MetadataExtractor:
     def __init__(self, *args, **kwargs):
-        self.logger = kwargs.get('logger', logging.getLogger('MetadataExtractor'))
+        self.logger = kwargs.get(
+            'logger', logging.getLogger('MetadataExtractor'))
         self.nlp = None
-        
+
     def load(self):
         if self.nlp is None:
-            self.nlp = spacy.load("en_core_web_sm") #spacy.load("en_core_web_md")
+            # spacy.load("en_core_web_md")
+            self.nlp = spacy.load("en_core_web_sm")
             self.nlp.add_pipe("yake")
-        
-    def extract(self, manifests, extract_keywords = True, runOnAllFields = True):
+
+    def extract(self, manifests, extract_keywords=True, runOnAllFields=True):
         self.load()
         self.logger.debug("extracting")
         metadataList = []
@@ -25,7 +27,8 @@ class MetadataExtractor:
             keywords = "None"
             if extract_keywords:
                 if runOnAllFields:
-                    dynamicMetadata = [ value for key, value in metadata.items() if key.startswith("_") ]
+                    dynamicMetadata = [
+                        value for key, value in metadata.items() if key.startswith("_")]
                     keywords = self.getKeywords(",".join(dynamicMetadata))
                 else:
                     keywords = self.getKeywords(metadata['_label'])
@@ -35,7 +38,8 @@ class MetadataExtractor:
 
     def getKeywords(self, text, n=4):
         doc = self.nlp(text)
-        keywords = [keyword.text for keyword, score in doc._.extract_keywords(n)]
+        keywords = [keyword.text for keyword,
+                    score in doc._.extract_keywords(n)]
         keywordsString = ",".join(keywords)
         return keywordsString
 
@@ -68,14 +72,15 @@ class MetadataExtractor:
 
 
 async def main():
-    from vikus import url, crawlCollection
+    from vikus import crawlCollection
 
+    url = "https://resource.swissartresearch.net/manifest/zbz-collection"
     manifests = await crawlCollection(url, "test")
     #manifests = manifests[:10]
     metadataExtractor = MetadataExtractor()
     metadata = metadataExtractor.extract(manifests)
     details = metadataExtractor.makeDetailStructure(metadata)
-    #print(metadata)
+    # print(metadata)
 
     #metadataExtractor.saveToCsv(metadata, "metadata.csv")
 

@@ -1,3 +1,4 @@
+import json
 import logging
 import asyncio
 import random
@@ -38,7 +39,7 @@ class Manifest:
 
     def getId(self):
         return self.hashId
-    
+
     def getVersionFromData(self):
         if self.parent is None:
             if self.data.get("@context") == "http://iiif.io/api/presentation/2/context.json":
@@ -61,7 +62,7 @@ class Manifest:
                 if self.id != self.data.get('@id'):
                     self.logger.warning("url {} does not match id {}".format(
                         self.url, self.data.get('@id')))
-            
+
             elif self.version == 3:
                 self.id = self.data.get('id')
                 self.label = self.getLabel()
@@ -86,27 +87,35 @@ class Manifest:
         if isinstance(self.data.get("label"), dict):
             labels = list(self.data.get("label").values())[0]
             label = labels[0]
+        elif isinstance(self.data.get("label"), list):
+            label = self.data.get("label")[0]
         else:
             label = self.data.get("label")
         return label
 
     def getThumbnailUrl(self):
         try:
-            if self.version == 2:
-                return self.data.get("thumbnail").get("@id")
-            elif self.version == 3:
-                return self.data.get('thumbnail')[0].get("id")
-        except:
+            if self.data.get('thumbnail'):
+                if self.data.get('thumbnail')[0].get('id'):
+                    return self.data.get('thumbnail')[0].get('id')
+                elif self.data.get('thumbnail')[0].get('@id'):
+                    return self.data.get('thumbnail')[0].get('@id')
+                elif self.data.get('thumbnail')[0].get('id'):
+                    return self.data.get('thumbnail')[0].get('id')
+            else:
+                return self.getLargeImageUrl(128)
+        except Exception as e:
             self.logger.warning("no thumbnail found for {}".format(self))
+            return None
 
-    def getImageUrl(self):
-        try:
-            if self.version == 2:
-                return self.data.get('sequences')[0].get('canvases')[0].get('images')[0].get('resource').get('@id')
-            elif self.version == 3:
-                return self.data.get('items')[0].get('items')[0].get('body').get('id')
-        except:
-            self.logger.warning("no image found for {}".format(self))
+    # def getImageUrl(self):
+    #     try:
+    #         if self.version == 2:
+    #             return self.data.get('sequences')[0].get('canvases')[0].get('images')[0].get('resource').get('@id')
+    #         elif self.version == 3:
+    #             return self.data.get('items')[0].get('items')[0].get('body').get('id')
+    #     except:
+    #         self.logger.warning("no image found for {}".format(self))
 
     def getLargeImageUrl(self, max=4096):
         try:
@@ -130,6 +139,26 @@ class Manifest:
                 return "{}/full/full/0/default.jpg".format(
                     service.get("@id"),
                 )
+
+            if service.get("type") == "ImageService3":
+                width = body.get("width")
+                height = body.get("height")
+
+                if width > max or height > max:
+                    if(width > height):
+                        ratio = max / width
+                    else:
+                        ratio = max / height
+
+                    return "{}/full/{},{}/0/default.jpg".format(
+                        service.get("id"),
+                        int(width * ratio),
+                        int(height * ratio)
+                    )
+                return "{}/full/full/0/default.jpg".format(
+                    service.get("id"),
+                )
+
         except:
             self.logger.warning("no image found for {}".format(self))
 
@@ -173,16 +202,24 @@ class Manifest:
             self.getFlatList(child, list)
         return list
 
-        if manifest.type == type:
-            list.append(manifest)
+        # if manifest.type == type:
+        #     list.append(manifest)
 
-        for item in manifest.children:
-            self.getFlatList(item, type, list)
+        # for item in manifest.children:
+        #     self.getFlatList(item, type, list)
 
-        return list
+        # return list
 
     def getChildren(self):
         return self.children
+
+    def valueToStr(self, value):
+        if isinstance(value, list):
+            return ",".join(value)
+        elif isinstance(value, dict):
+            return json.dumps(value)
+        else:
+            return str(value)
 
     def getMetadata(self, arr=None):
         """
@@ -212,7 +249,7 @@ class Manifest:
             self.logger.warning("no metadata found for {}".format(self))
             return None
 
-        arr['_label'] = self.label
+        arr['_label'] = self.valueToStr(self.label)
         arr['_iiif'] = self.id
 
         try:
@@ -227,7 +264,7 @@ class Manifest:
                     label = next(iter(item.get('label').values()))[0]
                     value = next(iter(item.get('value').values()))[0]
 
-                arr["_" + label] = value
+                arr["_" + label] = self.valueToStr(value)
         except:
             self.logger.warning("error in metadata {}".format(self))
 
@@ -256,17 +293,27 @@ async def main():
 
     #url = "https://iiif.bodleian.ox.ac.uk/iiif/manifest/e32a277e-91e2-4a6d-8ba6-cc4bad230410.json"
     # data = await cache.getJson(url)
-    
+
     url = "https://iiif.harvardartmuseums.org/manifests/object/344226"
-    url = "https://iiif.wellcomecollection.org/presentation/b2488473x"
+    url = "https://resource.swissartresearch.net/manifest/zbz-990109044120205508"
     data = await cache.getJson(url)
 
     manifest = Manifest(url=url)
     manifest.load(data)
-    print(manifest)
     print(manifest.getMetadata())
-    print(manifest.getThumbnailUrl())
-    print(manifest.getImageUrl())
+    # print(manifest)
+    # for item in manifest.data.get('items', []):
+    #     child = Manifest(
+    #         url=item.get('id'),
+    #         depth=1,
+    #         parent=manifest,
+    #     )
+    #     child.load(item)
+    #     # print(child.getThumbnailUrl())
+    #     print(child.getMetadata())
+    # print(manifest.getMetadata())
+    # print(manifest.getThumbnailUrl())
+    # print(manifest.getImageUrl())
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -13,6 +13,7 @@ import logging
 
 from manifest import Manifest
 
+
 class ManifestCrawler:
     def __init__(self, *args, **kwargs):
         self.client = kwargs.get('client')
@@ -48,11 +49,11 @@ class ManifestCrawler:
                 except:
                     self.logger.error(
                         "error loading manifest {}".format(manifest.url))
-                    continue
 
                 if manifest.version == 2:
                     if manifest.data.get('sequences'):
-                        items = manifest.data.get('sequences')[0].get('canvases')
+                        items = manifest.data.get('sequences')[
+                            0].get('canvases')
                     elif manifest.data.get('collections'):
                         items = manifest.data.get('collections')
                     elif manifest.data.get('manifests'):
@@ -70,36 +71,33 @@ class ManifestCrawler:
                         manifest.add(child)
 
                         # print(manifest)
-                        
+
                         if self.limitRecursion != 0 and manifest.depth >= self.limitRecursion:
-                                continue
+                            continue
 
                         if child.type == 'sc:Collection' or child.type == 'sc:Manifest':
                             # print("{} added".format(child))
                             self.size += 1
                             queue.put_nowait(
                                 (prio + 1 + random.uniform(0, 1), child))
-                
+
                 if manifest.version == 3:
-                    if manifest.data.get('items', False):
-                        for item in manifest.data.get('items'):
-                            child = Manifest(
-                                url=item.get('id'),
-                                depth=manifest.depth+1,
-                                parent=manifest,
-                            )
-                            child.load(item)
-                            manifest.add(child)
+                    for item in manifest.data.get('items', []):
+                        child = Manifest(
+                            url=item.get('id'),
+                            depth=manifest.depth+1,
+                            parent=manifest,
+                        )
+                        child.load(item)
+                        manifest.add(child)
 
-                            if self.limitRecursion != 0 and manifest.depth >= self.limitRecursion:
-                                continue
+                        if self.limitRecursion != 0 and manifest.depth >= self.limitRecursion:
+                            continue
 
-                            if child.type == 'Collection' or child.type == 'Manifest':
-                                # print("{} added {}".format(
-                                #     self.completed, queue.qsize()))
-                                self.size += 1
-                                queue.put_nowait(
-                                    (prio + 1 + random.uniform(0, 1), child))
+                        if child.type == 'Collection' or child.type == 'Manifest':
+                            self.size += 1
+                            queue.put_nowait(
+                                (prio + 1 + random.uniform(0, 1), child))
 
                 self.completed += 1
 

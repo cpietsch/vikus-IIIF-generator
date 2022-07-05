@@ -77,6 +77,9 @@ def create_data_json(config, metadata=None):
         data["detail"]["structure"] = metadataExtractor.makeDetailStructure(
             metadata)
 
+    # todo: add spirte dimensions
+    # data["loader"]["textures"]["medium"]["size"] = 128
+
     with open(dataPath, "w") as f:
         f.write(json.dumps(data, indent=4))
 
@@ -140,7 +143,8 @@ async def crawlImages(manifests, instanceId, numWorkers=IMAGEWORKERS):
 @duration
 async def makeMetadata(manifests, instanceId, path, extract_keywords=True):
     file = path + '/metadata.csv'
-    metadata = metadataExtractor.extract(manifests, extract_keywords=extract_keywords)
+    metadata = metadataExtractor.extract(
+        manifests, extract_keywords=extract_keywords)
     metadataExtractor.saveToCsv(metadata, file)
 
     return {'file': file, 'metadata': metadata}
