@@ -93,7 +93,7 @@ class Manifest:
             label = self.data.get("label")
         return label
 
-    def getThumbnailUrl(self):
+    def getThumbnailUrl(self, size=128):
         try:
             if self.data.get('thumbnail'):
                 if self.data.get('thumbnail')[0].get('id'):
@@ -103,7 +103,7 @@ class Manifest:
                 elif self.data.get('thumbnail')[0].get('id'):
                     return self.data.get('thumbnail')[0].get('id')
             else:
-                return self.getLargeImageUrl(128)
+                return self.getLargeImageUrl(size)
         except Exception as e:
             self.logger.warning("no thumbnail found for {}".format(self))
             return None
