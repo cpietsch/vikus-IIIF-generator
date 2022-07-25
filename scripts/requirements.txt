@@ -19,5 +19,4 @@ uvicorn[standard]
 aioredis
 randomname
 spacy
-spacy_ke
 jupyterlab

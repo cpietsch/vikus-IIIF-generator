@@ -17,11 +17,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 #RUN spacy download en_core_web_md
 RUN spacy download en_core_web_sm
 
-# download clip model to model/
-#RUN mkdir -p model
-#RUN wget -O model/clip.model https://huggingface.co/openai/clip-vit-base-patch32/resolve/main/pytorch_model.bin
-
-
 # Using Debian, as root
 RUN curl -fsSL https://deb.nodesource.com/setup_17.x | bash -
 RUN apt-get install -y nodejs
