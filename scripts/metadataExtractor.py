@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import spacy
+import spacy_ke
 import pandas as pd
 from rich.progress import track
 
