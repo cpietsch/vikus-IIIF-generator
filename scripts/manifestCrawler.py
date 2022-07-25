@@ -20,6 +20,7 @@ class ManifestCrawler:
         self.instanceId = kwargs.get('instanceId', 'default')
         self.limitRecursion = kwargs.get('limitRecursion', 0)
         self.cache = kwargs.get('cache', None)
+        self.skipCache = kwargs.get('skipCache', False)
         # self.semaphore = kwargs.get(
         #     'semaphore', asyncio.Semaphore(self.limitRecursion and 10 or 0))
         self.session = kwargs.get('session')
@@ -44,7 +45,7 @@ class ManifestCrawler:
                     return
 
                 try:
-                    data = await self.cache.getJson(manifest.url, session)
+                    data = await self.cache.getJson(manifest.url, session, skipCache=self.skipCache)
                     manifest.load(data)
                 except:
                     self.logger.error(

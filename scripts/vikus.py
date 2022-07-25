@@ -112,13 +112,14 @@ def create_config_json(iiif_url: str, label: str):
 
 
 @duration
-async def crawlCollection(url, instanceId, numWorkers=MANIFESTWORKERS, limitRecursion=False):
+async def crawlCollection(url, instanceId, numWorkers=MANIFESTWORKERS, limitRecursion=False, skip_cache=False):
     manifest = Manifest(url=url)
     manifestCrawler = ManifestCrawler(
         cache=cache,
         limitRecursion=limitRecursion,
         numWorkers=MANIFESTWORKERS,
-        instanceId=instanceId
+        instanceId=instanceId,
+        skipCache=skip_cache
     )
     await manifestCrawler.crawl(manifest)
     manifests = manifest.getFlatList()
@@ -127,12 +128,13 @@ async def crawlCollection(url, instanceId, numWorkers=MANIFESTWORKERS, limitRecu
 
 
 @duration
-async def crawlImages(manifests, instanceId, numWorkers=IMAGEWORKERS):
+async def crawlImages(manifests, instanceId, numWorkers=IMAGEWORKERS, skip_cache=False):
     imageCrawler = ImageCrawler(
         numWorkers=numWorkers,
         path=DATA_IMAGES_DIR,
         instanceId=instanceId,
-        cache=cache
+        cache=cache,
+        skipCache=skip_cache
     )
     imageCrawler.addFromManifests(manifests)
     images = await imageCrawler.runImageWorkers()

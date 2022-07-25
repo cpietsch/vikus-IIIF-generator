@@ -33,6 +33,7 @@ class ImageCrawler:
         self.instanceId = kwargs.get('instanceId', 'default')
         self.size = 0
         self.completed = 0
+        self.skipCache = kwargs.get('skipCache', False)
 
         if not os.path.exists(self.path):
             os.makedirs(self.path)
@@ -68,10 +69,10 @@ class ImageCrawler:
         self.logger.debug("download {}".format(url))
 
         filePath = self.makeFilename(id)
-        if os.path.exists(filePath) and not self.overwrite:
+        if os.path.exists(filePath) and not self.skipCache:
             return filePath
 
-        async with session.get(url) as response:
+        async with session.get(url, allow_redirects=True) as response:
             if response.status == 200:
                 self.logger.debug("downloading {}".format(url))
                 data = await response.read()

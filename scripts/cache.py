@@ -39,7 +39,7 @@ class Cache:
                     response = requests.get(url).text
                     return response.encode('utf-8')
 
-                async with session.get(url) as response:
+                async with session.get(url, allow_redirects=True) as response:
                     text = await response.text(encoding='utf-8')
                     return text
 
@@ -49,9 +49,9 @@ class Cache:
                 await asyncio.sleep(1)
         return None
 
-    async def getJson(self, url, session=None, retries=5):
+    async def getJson(self, url, session=None, retries=5, skipCache=False):
         self.logger.debug("get cache for {}".format(url))
-        if await self.redis.exists(url):
+        if await self.redis.exists(url) and not skipCache:
             self.logger.debug("cache hit")
             cached = await self.redis.get(url)
             return json.loads(cached)

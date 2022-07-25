@@ -79,6 +79,7 @@ DEFAULTS = {
     }
 }
 
+
 @app.get("/")
 def home():
     return {"IIIF": "meet VIKUS Viewer"}
@@ -101,12 +102,14 @@ def list_instances():
         instances.append(instance)
     return instances
 
+
 @app.post("/instances")
 async def create_instance(url: str, label: str = None):
     config = create_config_json(url, label)
 
     print(config)
     return config
+
 
 @app.get("/instances/{instance_id}")
 def read_instance(instance_id: str):
@@ -123,23 +126,27 @@ def read_instance(instance_id: str):
 
 @app.post("/instances/steps/collection")
 async def crawl_collection(
-        instance_id: str = Query(title="Instance ID", description="Instance ID"),
-        worker: int = Query(DEFAULTS["collection"]["worker"] ,title="Workers", description="Number of workers"),
-        depth: int  = Query(DEFAULTS["collection"]["depth"],title="Depth", description="Recursive crawl depth", min=0, max=100),
-    ):
+    instance_id: str = Query(title="Instance ID", description="Instance ID"),
+    worker: int = Query(DEFAULTS["collection"]["worker"],
+                        title="Workers", description="Number of workers"),
+    depth: int = Query(DEFAULTS["collection"]["depth"], title="Depth",
+                       description="Recursive crawl depth", min=0, max=100),
+    skip_cache: bool = Query(
+        False, title="Skip cache", description="Skip cache"),
+):
     """
     Crawl a IIIF collection using parallel workers and a maximal depth.
-    """ 
+    """
     config = read_instance(instance_id)
     if config is None:
         return {"error": "Instance {} doesn't exist".format(instance_id)}, 404
-
 
     manifests = await crawlCollection(
         config["iiif_url"],
         instance_id,
         worker,
-        depth
+        depth,
+        skip_cache
     )
 
     config["status"] = "crawledCollection"
@@ -157,11 +164,14 @@ async def crawl_collection(
     return config
 
 
-@app.post("/instances/steps/images") 
+@app.post("/instances/steps/images")
 async def crawl_images(
-        instance_id: str = Query(title="Instance ID", description="Instance ID"),
-        worker: int = Query(DEFAULTS["collection"]["worker"],title="Workers", description="Number of workers")
-    ):
+    instance_id: str = Query(title="Instance ID", description="Instance ID"),
+    worker: int = Query(DEFAULTS["collection"]["worker"],
+                        title="Workers", description="Number of workers"),
+    skip_cache: bool = Query(
+        False, title="Skip cache", description="Skip cache")
+):
     """
     Download all thubmnail images from a IIIF collection.
     """
@@ -171,7 +181,7 @@ async def crawl_images(
     config = InstanceManager[instance_id]["config"]
 
     manifests = InstanceManager[instance_id]["manifests"]
-    images = await crawlImages(manifests, instance_id, worker)
+    images = await crawlImages(manifests, instance_id, worker, skip_cache)
 
     config["status"] = "crawledImages"
     config["images"] = len(images)
@@ -187,9 +197,9 @@ async def crawl_images(
 
 @app.post("/instances/steps/metadata")
 async def make_metadata(
-        instance_id: str = Query(title="Instance ID", description="Instance ID"),
-        # extract_keywords: bool = Query(default=True,title="Extract keywords", description="Extract keywords"),
-    ):
+    instance_id: str = Query(title="Instance ID", description="Instance ID"),
+    # extract_keywords: bool = Query(default=True,title="Extract keywords", description="Extract keywords"),
+):
     """
     Create a metadata file for all images in a IIIF collection.
     Use Spacy to extract keywords.
@@ -212,8 +222,8 @@ async def make_metadata(
 
 @app.post("/instances/steps/spritesheets")
 async def make_spritesheets(
-        instance_id: str = Query(title="Instance ID", description="Instance ID")
-    ):
+    instance_id: str = Query(title="Instance ID", description="Instance ID")
+):
     """
     Create a spritesheet for all images in a IIIF collection given the downloaded thumbnails.
     """
@@ -234,9 +244,10 @@ async def make_spritesheets(
 
 @app.post("/instances/steps/features")
 async def make_features(
-        instance_id: str = Query(title="Instance ID", description="Instance ID"),
-        batch_size: int = Query(DEFAULTS["features"]["batch_size"],title="Batch Size", description="Batch size for the feature extraction"),
-    ):
+    instance_id: str = Query(title="Instance ID", description="Instance ID"),
+    batch_size: int = Query(DEFAULTS["features"]["batch_size"], title="Batch Size",
+                            description="Batch size for the feature extraction"),
+):
     """
     Create a CLIP features fo all images in a IIIF collection given the downloaded thumbnails.
     """
@@ -259,11 +270,14 @@ async def make_features(
 
 @app.post("/instances/steps/similarity")
 async def make_umap(
-        instance_id: str = Query(title="Instance ID", description="Instance ID"),
-        n_neighbors: int = Query(DEFAULTS["umap"]["n_neighbors"],title="Neighbors", description="Number of neighbors"),
-        min_distance: float = Query(DEFAULTS["umap"]["min_distance"],title="Min Distance", description="Minimum distance"),
-        raster_fairy: bool = Query(DEFAULTS["umap"]["raster_fairy"],title="Raster Fairy", description="Use raster fairy"),
-    ):
+    instance_id: str = Query(title="Instance ID", description="Instance ID"),
+    n_neighbors: int = Query(
+        DEFAULTS["umap"]["n_neighbors"], title="Neighbors", description="Number of neighbors"),
+    min_distance: float = Query(
+        DEFAULTS["umap"]["min_distance"], title="Min Distance", description="Minimum distance"),
+    raster_fairy: bool = Query(
+        DEFAULTS["umap"]["raster_fairy"], title="Raster Fairy", description="Use raster fairy"),
+):
     """
     Create a UMAP embedding based on the CLIP features.
     """
@@ -281,6 +295,7 @@ async def make_umap(
     config["status"] = "umap"
 
     return config
+
 
 @app.post("/instances/steps/zip")
 async def make_zip(instance_id: str):
@@ -321,12 +336,11 @@ async def run(instance_id: str = Query(title="Instance ID", description="Instanc
     await make_features(instance_id, batch_size=DEFAULTS["features"]["batch_size"])
     await make_umap(instance_id, n_neighbors=DEFAULTS["umap"]["n_neighbors"], min_distance=DEFAULTS["umap"]["min_distance"], raster_fairy=DEFAULTS["umap"]["raster_fairy"])
     await make_zip(instance_id)
-    
+
     config = InstanceManager[instance_id]["config"]
     config["status"] = "umap"
 
     return config
-
 
 
 @app.delete("/instances/{instance_id}")
@@ -359,7 +373,8 @@ async def websocket_endpoint(websocket: WebSocket, instance_id: str):
                 key, messages = resp[0]
                 for (id, message) in messages:
                     last_id = id
-                    data = { key.decode(): val.decode() for key, val in message.items() }
+                    data = {key.decode(): val.decode()
+                            for key, val in message.items()}
                     await manager.broadcast(data)
             else:
                 await asyncio.sleep(0.1)
@@ -409,9 +424,9 @@ async def websocket_endpoint(websocket: WebSocket, instance_id: str):
 
 if __name__ == "__main__":
     uvicorn.run("main:app",
-        host="0.0.0.0",
-        port=5000,
-        reload=True,
-        # log_level="debug"
-    )
+                host="0.0.0.0",
+                port=5000,
+                reload=True,
+                # log_level="debug"
+                )
     # asyncio.run(app())
