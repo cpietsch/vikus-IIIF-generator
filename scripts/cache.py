@@ -35,9 +35,9 @@ class Cache:
     async def getJsonFromUrl(self, url, session=None, retries=5):
         for i in range(retries):
             try:
-                if session is None:
-                    response = requests.get(url).text
-                    return response.encode('utf-8')
+                # if session is None:
+                #     response = requests.get(url).text
+                #     return response.encode('utf-8')
 
                 async with session.get(url, allow_redirects=True) as response:
                     text = await response.text(encoding='utf-8')
