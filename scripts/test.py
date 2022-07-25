@@ -1,3 +1,4 @@
+from vikus import crawlCollection
 import json
 import os
 import time
@@ -28,15 +29,11 @@ from pandas.io.json import json_normalize
 
 pretty.install()
 
-from manifest import Manifest
-from manifestCrawler import ManifestCrawler
-from cache import Cache
-from vikus import crawlCollection
 
 cache = Cache()
 
 url = "https://www.e-codices.unifr.ch/metadata/iiif/collection.json"
-url = "https://www.e-codices.unifr.ch/metadata/iiif/collection/bks.json"
+url = "https://resource.swissartresearch.net/manifest/zbz-collection-10"
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -47,8 +44,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger('rich')
 
+
 async def main():
-    manifests = await crawlCollection(url, "test", numWorkers=10)
+    manifests = await crawlCollection(url, "test", numWorkers=1)
     # manifests = manifests[:10]
 
     print("{} manifests".format(len(manifests)))
@@ -57,7 +55,7 @@ async def main():
     # metadataExtractor = MetadataExtractor()
     # metadata = metadataExtractor.extract(manifests)
     # details = metadataExtractor.makeDetailStructure(metadata)
-    #print(metadata)
+    # print(metadata)
 
     #metadataExtractor.saveToCsv(metadata, "metadata.csv")
 

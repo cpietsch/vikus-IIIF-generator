@@ -4,6 +4,7 @@ import asyncio
 import random
 import time
 import hashlib
+import aiohttp
 
 from cache import Cache
 
@@ -291,7 +292,11 @@ async def main():
 
     url = "https://iiif.harvardartmuseums.org/manifests/object/344226"
     url = "https://resource.swissartresearch.net/manifest/zbz-990109044120205508"
-    data = await cache.getJson(url)
+    url = "https://resource.swissartresearch.net/manifest/zbz-990054267420205508"
+    async with aiohttp.ClientSession() as session:
+        data = await cache.getJson(url, session, skipCache=True)
+
+    # print(data)
 
     manifest = Manifest(url=url)
     manifest.load(data)
