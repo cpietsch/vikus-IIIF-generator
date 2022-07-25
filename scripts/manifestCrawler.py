@@ -84,7 +84,7 @@ class ManifestCrawler:
                 if manifest.version == 3:
                     for item in manifest.data.get('items', []):
                         child = Manifest(
-                            url=item.get('id'),
+                            url=item.get('id') or item.get('@id'),
                             depth=manifest.depth+1,
                             parent=manifest,
                         )

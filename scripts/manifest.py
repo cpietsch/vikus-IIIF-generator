@@ -59,17 +59,11 @@ class Manifest:
                 self.id = self.data.get("@id")
                 self.label = self.getLabel()
                 self.type = self.data.get("@type")
-                if self.id != self.data.get('@id'):
-                    self.logger.warning("url {} does not match id {}".format(
-                        self.url, self.data.get('@id')))
 
             elif self.version == 3:
-                self.id = self.data.get('id')
+                self.id = self.data.get("id") or self.data.get("@id")
                 self.label = self.getLabel()
-                self.type = self.data.get('type')
-                if self.id != self.data.get('id'):
-                    self.logger.warning("url {} does not match id {}".format(
-                        self.url, self.data.get('id')))
+                self.type = self.data.get('type') or self.data.get('@type')
 
             # if(self.tree is None):
             #     self.tree = Tree(
@@ -84,13 +78,14 @@ class Manifest:
         self.children.append(child)
 
     def getLabel(self):
+        label = ""
         if isinstance(self.data.get("label"), dict):
             labels = list(self.data.get("label").values())[0]
             label = labels[0]
         elif isinstance(self.data.get("label"), list):
             label = self.data.get("label")[0]
         else:
-            label = self.data.get("label")
+            label = self.data.get("label") or self.data.get("@label")
         return label
 
     def getThumbnailUrl(self, size=128):
