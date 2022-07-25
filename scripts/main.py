@@ -61,11 +61,13 @@ InstanceManager = {}
 DEFAULTS = {
     "collection": {
         "worker": 4,
-        "depth": 0
+        "depth": 0,
+        "skip_cache": False,
     },
     "images": {
         "worker": 4,
-        "depth": 0
+        "depth": 0,
+        "skip_cache": False,
     },
     "features": {
         "batch_size": 64,
@@ -132,7 +134,7 @@ async def crawl_collection(
     depth: int = Query(DEFAULTS["collection"]["depth"], title="Depth",
                        description="Recursive crawl depth", min=0, max=100),
     skip_cache: bool = Query(
-        False, title="Skip cache", description="Skip cache"),
+        DEFAULTS["collection"]["skip_cache"], title="Skip cache", description="Skip cache"),
 ):
     """
     Crawl a IIIF collection using parallel workers and a maximal depth.
@@ -167,16 +169,16 @@ async def crawl_collection(
 @app.post("/instances/steps/images")
 async def crawl_images(
     instance_id: str = Query(title="Instance ID", description="Instance ID"),
-    worker: int = Query(DEFAULTS["collection"]["worker"],
+    worker: int = Query(DEFAULTS["images"]["worker"],
                         title="Workers", description="Number of workers"),
     skip_cache: bool = Query(
-        False, title="Skip cache", description="Skip cache")
+        DEFAULTS["images"]["skip_cache"], title="Skip cache", description="Skip cache")
 ):
     """
     Download all thubmnail images from a IIIF collection.
     """
     if instance_id not in InstanceManager or "manifests" not in InstanceManager[instance_id]:
-        await crawl_collection(instance_id, worker=DEFAULTS["collection"]["worker"], depth=DEFAULTS["collection"]["depth"])
+        await crawl_collection(instance_id, worker=DEFAULTS["collection"]["worker"], depth=DEFAULTS["collection"]["depth"], skip_cache=DEFAULTS["collection"]["skip_cache"])
 
     config = InstanceManager[instance_id]["config"]
 
@@ -206,7 +208,7 @@ async def make_metadata(
     """
     # print(extract_keywords)
     if instance_id not in InstanceManager or "manifests" not in InstanceManager[instance_id]:
-        await crawl_collection(instance_id, worker=DEFAULTS["collection"]["worker"], depth=DEFAULTS["collection"]["depth"])
+        await crawl_collection(instance_id, worker=DEFAULTS["collection"]["worker"], depth=DEFAULTS["collection"]["depth"], skip_cache=DEFAULTS["collection"]["skip_cache"])
 
     config = InstanceManager[instance_id]["config"]
     manifests = InstanceManager[instance_id]["manifests"]
@@ -228,7 +230,7 @@ async def make_spritesheets(
     Create a spritesheet for all images in a IIIF collection given the downloaded thumbnails.
     """
     if instance_id not in InstanceManager or "images" not in InstanceManager[instance_id]:
-        await crawl_images(instance_id, worker=DEFAULTS["images"]["worker"])
+        await crawl_images(instance_id, worker=DEFAULTS["images"]["worker"], skip_cache=DEFAULTS["images"]["skip_cache"])
 
     config = InstanceManager[instance_id]["config"]
     images = InstanceManager[instance_id]["images"]
@@ -252,7 +254,7 @@ async def make_features(
     Create a CLIP features fo all images in a IIIF collection given the downloaded thumbnails.
     """
     if instance_id not in InstanceManager or "images" not in InstanceManager[instance_id]:
-        await crawl_images(instance_id, worker=DEFAULTS["images"]["worker"])
+        await crawl_images(instance_id, worker=DEFAULTS["images"]["worker"], skip_cache=DEFAULTS["images"]["skip_cache"])
 
     config = InstanceManager[instance_id]["config"]
     images = InstanceManager[instance_id]["images"]
@@ -329,8 +331,8 @@ async def make_zip(instance_id: str):
 async def run(instance_id: str = Query(title="Instance ID", description="Instance ID")):
     # run all steps
     print("Running instance {}".format(instance_id))
-    await crawl_collection(instance_id, worker=DEFAULTS["collection"]["worker"], depth=DEFAULTS["collection"]["depth"])
-    await crawl_images(instance_id, worker=DEFAULTS["images"]["worker"])
+    await crawl_collection(instance_id, worker=DEFAULTS["collection"]["worker"], depth=DEFAULTS["collection"]["depth"], skip_cache=DEFAULTS["collection"]["skip_cache"])
+    await crawl_images(instance_id, worker=DEFAULTS["images"]["worker"], skip_cache=DEFAULTS["images"]["skip_cache"])
     await make_metadata(instance_id)
     await make_spritesheets(instance_id)
     await make_features(instance_id, batch_size=DEFAULTS["features"]["batch_size"])
