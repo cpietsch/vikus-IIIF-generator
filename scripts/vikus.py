@@ -33,7 +33,7 @@ DATA_IMAGES_DIR = "../data/images"
 MANIFESTWORKERS = 4
 IMAGEWORKERS = 4
 
-debug = True
+debug = False
 loggingLevel = logging.DEBUG if debug else logging.INFO
 
 logging.basicConfig(

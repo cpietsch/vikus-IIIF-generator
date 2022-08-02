@@ -62,7 +62,7 @@ class MetadataExtractor:
         if self.cache is not None:
             cached = await self.cache.getKeywords(text)
             if cached is not None:
-                return cached
+                return cached.decode("utf-8") 
             
         doc = self.nlp(text)
         keywords = [keyword.text for keyword,
