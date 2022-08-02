@@ -50,8 +50,9 @@ class ImageCrawler:
             self.size += 1
             self.queue.put_nowait((id, thumbnailUrl))
 
-    def makeFilename(self, id):
+    def makeFilename(self, url):
         # id is an hash
+        id = hashlib.md5(url.encode('utf-8')).hexdigest()
         filename = id + ".jpg"
         # create 2 subfolders
         # first subfolder is the first 2 chars of the hash
@@ -68,7 +69,7 @@ class ImageCrawler:
     async def download(self, url, id, session):
         self.logger.debug("download {}".format(url))
 
-        filePath = self.makeFilename(id)
+        filePath = self.makeFilename(url)
         if os.path.exists(filePath) and not self.skipCache:
             return filePath
 
