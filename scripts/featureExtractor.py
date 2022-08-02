@@ -98,6 +98,8 @@ class FeatureExtractor:
         self.logger.debug("Extracting features of {}".format(len(imageList)))
         features = []
         ids = []
+        total = len(imageList)
+        completed = 0
 
         batchedImageList = [imageList[i:i + batchSize]
                             for i in range(0, len(imageList), batchSize)]
@@ -110,6 +112,15 @@ class FeatureExtractor:
             detached = outputs.detach().numpy()
             features.extend(detached)
             ids.extend([id for (id, image_path) in batch])
+
+            if self.cache is not None:
+                completed += len(batchedImageList)
+                await self.cache.postProgress(self.instanceId, {
+                    'progress': completed / total,
+                    'task': 'features',
+                    'size': total,
+                    'completed': completed
+                })
 
         return (ids, features)
 
