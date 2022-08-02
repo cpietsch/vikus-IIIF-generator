@@ -33,7 +33,7 @@ pretty.install()
 cache = Cache()
 
 url = "https://www.e-codices.unifr.ch/metadata/iiif/collection.json"
-url = "https://resource.swissartresearch.net/manifest/zbz-collection-10"
+url = "https://resource.swissartresearch.net/manifest/zbz-collection"
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -46,8 +46,8 @@ logger = logging.getLogger('rich')
 
 
 async def main():
-    manifests = await crawlCollection(url, "test", numWorkers=1)
-    # manifests = manifests[:10]
+    manifests = await crawlCollection(url, "test", numWorkers=10)
+    manifests = manifests[:100]
 
     print("{} manifests".format(len(manifests)))
     for manifest in manifests:

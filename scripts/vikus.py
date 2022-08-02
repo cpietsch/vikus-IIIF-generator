@@ -103,13 +103,22 @@ def create_config_json(iiif_url: str, label: str):
         "spritesheetPath": spritesheetPath,
         "created": timestamp,
         "updated": timestamp,
-        "status": "created"
+        "collection": False,
     }
 
     saveConfig(config)
 
     return config
 
+
+def saveConfig(config, metadata=None):
+    config["updated"] = int(time.time())
+    with open(os.path.join(config['path'], "instance.json"), "w") as f:
+        f.write(json.dumps(config, indent=4))
+
+    # this needs to be outside of this function
+    create_info_md(config)
+    create_data_json(config, metadata)
 
 @duration
 async def crawlCollection(url, instanceId, numWorkers=MANIFESTWORKERS, limitRecursion=False, skip_cache=False):
@@ -196,13 +205,6 @@ async def test(url, path, instanceId):
     # print(images)
 
 
-def saveConfig(config, metadata=None):
-    with open(os.path.join(config['path'], "instance.json"), "w") as f:
-        f.write(json.dumps(config, indent=4))
-
-    # this needs to be outside of this function
-    create_info_md(config)
-    create_data_json(config, metadata)
 
 
 if __name__ == "__main__":

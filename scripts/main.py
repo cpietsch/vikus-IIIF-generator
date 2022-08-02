@@ -140,8 +140,8 @@ async def crawl_collection(
     Crawl a IIIF collection using parallel workers and a maximal depth.
     """
     config = read_instance(instance_id)
-    if config is None:
-        return {"error": "Instance {} doesn't exist".format(instance_id)}, 404
+    if "error" in config:
+        return config
 
     manifests = await crawlCollection(
         config["iiif_url"],
@@ -151,15 +151,13 @@ async def crawl_collection(
         skip_cache
     )
 
-    config["status"] = "crawledCollection"
-    config["manifests"] = len(manifests)
+    config["collection"] = True
     saveConfig(config)
 
     if instance_id not in InstanceManager:
         InstanceManager[instance_id] = {"config": config}
 
     InstanceManager[instance_id].update({
-        "status": "crawledCollection",
         "manifests": manifests
     })
 
@@ -185,12 +183,10 @@ async def crawl_images(
     manifests = InstanceManager[instance_id]["manifests"]
     images = await crawlImages(manifests, instance_id, worker, skip_cache)
 
-    config["status"] = "crawledImages"
-    config["images"] = len(images)
+    config["images"] = True
     saveConfig(config)
 
     InstanceManager[instance_id].update({
-        "status": "crawledImages",
         "images": images
     })
 
@@ -212,12 +208,12 @@ async def make_metadata(
 
     config = InstanceManager[instance_id]["config"]
     manifests = InstanceManager[instance_id]["manifests"]
-    path = config["path"]
-    metadata = await makeMetadata(manifests, instance_id, path)
-    saveConfig(config, metadata["metadata"])
 
-    config["status"] = "metadata"
+    metadata = await makeMetadata(manifests, instance_id, config["path"])
+
+    config["metadata"] = True
     config["metadataFile"] = metadata["file"]
+    saveConfig(config, metadata["metadata"])
 
     return config
 
@@ -235,11 +231,11 @@ async def make_spritesheets(
     config = InstanceManager[instance_id]["config"]
     images = InstanceManager[instance_id]["images"]
     files = [os.path.abspath(path) for (id, path) in images]
-    spritesheetPath = config["spritesheetPath"]
-    projectPath = config["path"]
-    await makeSpritesheets(files, instance_id, projectPath, spritesheetPath)
 
-    config["status"] = "spritesheets"
+    await makeSpritesheets(files, instance_id, config["path"], config["spritesheetPath"])
+
+    config["spritesheets"] = True
+    saveConfig(config)
 
     return config
 
@@ -262,10 +258,10 @@ async def make_features(
     features = await makeFeatures(images, instance_id, batch_size)
 
     InstanceManager[instance_id].update({
-        "status": "features",
         "features": features
     })
-    config["status"] = "features"
+    config["features"] = True
+    saveConfig(config)
 
     return config
 
@@ -287,14 +283,12 @@ async def make_umap(
         await make_features(instance_id, batch_size=DEFAULTS["features"]["batch_size"])
 
     config = InstanceManager[instance_id]["config"]
-    images = InstanceManager[instance_id]["images"]
     (ids, features) = InstanceManager[instance_id]["features"]
 
-    path = config["path"]
+    await makeUmap(features, instance_id, config["path"], ids, n_neighbors, min_distance, raster_fairy)
 
-    await makeUmap(features, instance_id, path, ids, n_neighbors, min_distance, raster_fairy)
-
-    config["status"] = "umap"
+    config["similarity"] = True
+    saveConfig(config)
 
     return config
 
@@ -321,8 +315,9 @@ async def make_zip(instance_id: str):
                           os.path.relpath(os.path.join(dirpath, filename),
                                           os.path.join(path, '..')))
 
-    config["status"] = "zip"
+    config["zip"] = True
     config["zipFile"] = instance_id + "/project.zip"
+    saveConfig(config)
 
     return config
 
@@ -340,7 +335,6 @@ async def run(instance_id: str = Query(title="Instance ID", description="Instanc
     await make_zip(instance_id)
 
     config = InstanceManager[instance_id]["config"]
-    config["status"] = "umap"
 
     return config
 
