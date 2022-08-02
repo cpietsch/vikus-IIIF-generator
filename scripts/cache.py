@@ -9,7 +9,7 @@ import logging
 import sys
 import numpy as np
 import struct
-
+import hashlib
 
 class Cache:
     def __init__(self, *args, **kwargs):
@@ -17,6 +17,14 @@ class Cache:
             'redis', aioredis.from_url("redis://redis"))
         self.logger = kwargs.get('logger', logging.getLogger('cache'))
         self.psub = self.redis.pubsub()
+    
+    async def getKeywords(self, text):
+        hash = hashlib.md5(text.encode('utf-8')).hexdigest()
+        return await self.redis.get(hash)
+
+    async def setKeywords(self, text, keywords):
+        hash = hashlib.md5(text.encode('utf-8')).hexdigest()
+        await self.redis.set(hash, keywords)
 
     async def saveFeatures(self, id, a):
         # print("saveFeatures", a.shape)
@@ -31,6 +39,9 @@ class Cache:
         features = np.frombuffer(encoded, dtype=np.float32, count=512)
         # print("getFeatures", a.shape)
         return features
+
+    async def postProgress(self, instanceId, data):
+        await self.redis.xadd(instanceId, data)
 
     async def getJsonFromUrl(self, url, session=None, retries=5):
         for i in range(retries):

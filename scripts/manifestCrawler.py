@@ -104,12 +104,11 @@ class ManifestCrawler:
 
                 progress = self.completed / self.size
 
-                await self.cache.redis.xadd(self.instanceId, {
+                await self.cache.postProgress(self.instanceId, {
                     'progress': progress,
-                    'task': 'crawlCollection',
+                    'task': 'collection',
                     'queue': queue.qsize(),
                     'size': self.size,
-                    'type': manifest.type,
                     'completed': self.completed
                 })
                 # await self.cache.redis.publish(self.instanceId, json.dumps({'task': 'crawlingManifest', 'queue': queue.qsize(), 'completed': self.completed, 'type': manifest.type}))
@@ -153,11 +152,10 @@ class ManifestCrawler:
 
         await self.cache.redis.xadd(self.instanceId, {
             'progress': 1,
-            'task': 'crawlingManifest',
+            'task': 'collection',
             'queue': queue.qsize(),
             'size': self.size,
             'completed': self.completed,
-            'type': 'done'
         })
 
         return manifest

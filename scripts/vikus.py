@@ -48,7 +48,7 @@ logger = logging.getLogger('rich')
 cache = Cache()
 # cache.clear()
 
-metadataExtractor = MetadataExtractor()
+metadataExtractor = MetadataExtractor(cache=cache)
 
 url = "https://iiif.wellcomecollection.org/presentation/collections/genres/Watercolors"
 
@@ -145,8 +145,11 @@ async def crawlImages(manifests, instanceId, numWorkers=IMAGEWORKERS, skip_cache
 @duration
 async def makeMetadata(manifests, instanceId, path, extract_keywords=True):
     file = path + '/metadata.csv'
-    metadata = metadataExtractor.extract(
-        manifests, extract_keywords=extract_keywords)
+    metadata = await metadataExtractor.extract(
+        manifests,
+        extract_keywords=extract_keywords,
+        instanceId=instanceId
+    )
     metadataExtractor.saveToCsv(metadata, file)
 
     return {'file': file, 'metadata': metadata}

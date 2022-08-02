@@ -380,7 +380,7 @@ async def websocket_endpoint(websocket: WebSocket, instance_id: str):
                     await manager.broadcast(data)
             else:
                 await asyncio.sleep(0.1)
-                await manager.broadcast({"type": "ping", "data": 1})
+                await manager.broadcast({"type": "ping", "data": 1, "instance": instance_id})
     except Exception as e:
         manager.disconnect(websocket)
         print("Disconnected", instance_id)

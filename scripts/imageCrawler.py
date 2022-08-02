@@ -108,10 +108,10 @@ class ImageCrawler:
                 self.completed += 1
                 progress = self.completed / self.size
                 # progress.update(task, advance=1)
-                await self.cache.redis.xadd(self.instanceId, {
+                await self.cache.postProgress(self.instanceId, {
                     'progress': progress,
                     'size': self.size,
-                    'task': 'crawlImages',
+                    'task': 'images',
                     'queue': self.queue.qsize(),
                     'completed': self.completed
                 })
@@ -144,13 +144,12 @@ class ImageCrawler:
         # Wait until all worker tasks are cancelled.
         await asyncio.gather(*self.tasks, return_exceptions=True)
 
-        await self.cache.redis.xadd(self.instanceId, {
+        await self.cache.postProgress(self.instanceId, {
             'progress': 1,
             'size': self.size,
-            'task': 'crawlingImages',
+            'task': 'images',
             'queue': self.queue.qsize(),
-            'completed': self.completed,
-            'status': 'done'
+            'completed': self.completed
         })
         self.logger.debug("load images done")
 
