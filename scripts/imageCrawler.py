@@ -11,6 +11,7 @@ import random
 import time
 import logging
 from rich.progress import Progress
+from helpers import calculateThumbnailSize
 
 
 class ImageCrawler:
@@ -39,11 +40,14 @@ class ImageCrawler:
             os.makedirs(self.path)
 
     def addFromManifests(self, manifests):
-        for manifest in manifests:
-            self.addFromManifest(manifest)
+        thumbnailSize = calculateThumbnailSize(len(manifests))
+        print("thumbnailSize {}".format(thumbnailSize))
 
-    def addFromManifest(self, manifest):
-        thumbnailUrl = manifest.getThumbnailUrl()
+        for manifest in manifests:
+            self.addFromManifest(manifest, thumbnailSize)
+
+    def addFromManifest(self, manifest, size=128):
+        thumbnailUrl = manifest.getThumbnailUrl(size)
         id = manifest.getId()
         self.logger.debug("adding {}".format(thumbnailUrl))
         if thumbnailUrl is not None:

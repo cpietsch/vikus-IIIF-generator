@@ -2,6 +2,20 @@ import functools
 import os
 import time
 import asyncio
+from unittest import case
+
+
+def calculateThumbnailSize(num):
+    if num < 200:
+        return 256
+    elif num < 1000:
+        return 128
+    elif num < 6000:
+        return 64
+    elif num < 10000:
+        return 32
+    else:
+        return 8
 
 
 def duration(func):

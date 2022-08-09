@@ -24,6 +24,7 @@ import os
 from functools import wraps
 import shutil
 import uuid
+from helpers import calculateThumbnailSize
 
 # from cache import Cache
 from vikus import create_config_json, crawlCollection, crawlImages, makeMetadata, makeSpritesheets, saveConfig, create_info_md, makeFeatures, makeUmap, cache
@@ -231,9 +232,10 @@ async def make_spritesheets(
 
     config = InstanceManager[instance_id]["config"]
     images = InstanceManager[instance_id]["images"]
-    files = [os.path.abspath(path) for (id, path) in images]
+    spriteSize = calculateThumbnailSize(len(images))
+    # files = [os.path.abspath(path) for (id, path) in images]
 
-    await makeSpritesheets(files, instance_id, config["path"], config["spritesheetPath"])
+    await makeSpritesheets(images, instance_id, config["path"], config["spritesheetPath"], spriteSize)
 
     config["spritesheets"] = True
     saveConfig(config)

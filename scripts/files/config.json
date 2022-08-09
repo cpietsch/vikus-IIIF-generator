@@ -6,7 +6,15 @@
     "loader": {
         "info": "info.md",
         "items": "metadata.csv",
-        "tsne": "umap.csv",
+        "layouts": [
+            {
+                "title": "time"
+            },
+            {
+                "title": "UMAP",
+                "url": "umap.csv"
+            }
+        ],
         "textures": {
             "medium": {
                 "size": 100,

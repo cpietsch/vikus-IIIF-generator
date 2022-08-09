@@ -70,15 +70,14 @@ def create_data_json(config, metadata=None):
     data["project"]["name"] = config["label"]
     columns = 100
     if "numImages" in config:
-        columns = math.isqrt(int(config["numImages"] * 1.4))
+        columns = math.isqrt(int(config["numImages"] * 3))
+        data["loader"]["textures"]["medium"]["size"] = calculateThumbnailSize(
+            int(config["numImages"]))
     data["projection"]["columns"] = columns
     # this needs to be refactored
     if metadata is not None:
         data["detail"]["structure"] = metadataExtractor.makeDetailStructure(
             metadata)
-
-    # todo: add spirte dimensions
-    # data["loader"]["textures"]["medium"]["size"] = 128
 
     with open(dataPath, "w") as f:
         f.write(json.dumps(data, indent=4))
@@ -169,11 +168,18 @@ async def makeMetadata(manifests, instanceId, path, extract_keywords=True):
 async def makeSpritesheets(files, instanceId, projectPath, spritesheetPath, spriteSize=128):
     spriter = Sharpsheet(logger=logger, instanceId=instanceId)
     thumbnailPath = createFolder("{}/images/thumbs".format(projectPath))
+    # delete existing spritesheets
+    for file in os.listdir(spritesheetPath):
+        os.remove(os.path.join(spritesheetPath, file))
+    for file in os.listdir(thumbnailPath):
+        os.remove(os.path.join(thumbnailPath, file))
+
     # make for each file a symlink into the thumbnailPath folder
-    for file in files:
-        symlinkFile = os.path.join(thumbnailPath, os.path.basename(file))
+    for id, file in files:
+        filePath = os.path.abspath(file)
+        symlinkFile = os.path.join(thumbnailPath, id + ".jpg")
         if not os.path.exists(symlinkFile):
-            os.symlink(file, symlinkFile)
+            os.symlink(filePath, symlinkFile)
 
     await spriter.generateFromPath(thumbnailPath, outputPath=spritesheetPath, spriteSize=spriteSize)
 
