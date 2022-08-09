@@ -186,7 +186,8 @@ async def makeSpritesheets(files, instanceId, projectPath, spritesheetPath, spri
 
 @duration
 async def makeFeatures(files, instanceId, batchSize):
-    featureExtractor = FeatureExtractor(cache=cache, overwrite=False)
+    featureExtractor = FeatureExtractor(
+        cache=cache, overwrite=False, instanceId=instanceId)
     featureExtractor.load_model()
     features = await featureExtractor.batch_extract_features_cached(files, batchSize)
     # print(features)
