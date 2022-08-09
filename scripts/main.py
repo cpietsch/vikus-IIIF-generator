@@ -184,6 +184,7 @@ async def crawl_images(
     images = await crawlImages(manifests, instance_id, worker, skip_cache)
 
     config["images"] = True
+    config["numImages"] = len(images)
     saveConfig(config)
 
     InstanceManager[instance_id].update({

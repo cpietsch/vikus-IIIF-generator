@@ -69,8 +69,8 @@ def create_data_json(config, metadata=None):
 
     data["project"]["name"] = config["label"]
     columns = 100
-    if "images" in config:
-        columns = math.isqrt(int(config["images"] * 1.4))
+    if "numImages" in config:
+        columns = math.isqrt(int(config["numImages"] * 1.4))
     data["projection"]["columns"] = columns
     # this needs to be refactored
     if metadata is not None:
@@ -119,6 +119,7 @@ def saveConfig(config, metadata=None):
     # this needs to be outside of this function
     create_info_md(config)
     create_data_json(config, metadata)
+
 
 @duration
 async def crawlCollection(url, instanceId, numWorkers=MANIFESTWORKERS, limitRecursion=False, skip_cache=False):
@@ -203,8 +204,6 @@ async def test(url, path, instanceId):
     print(manifests)
     # images = await crawlImages(manifests, instanceId, path)
     # print(images)
-
-
 
 
 if __name__ == "__main__":
