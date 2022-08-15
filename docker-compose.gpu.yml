@@ -5,7 +5,8 @@ services:
     # image: vikusdocker
     build:
       context: .
-      dockerfile: DockerfileGpu
+      dockerfile: gpu.Dockerfile
+    command: tail -f /dev/null
     ports:
       - 5000:5000
     volumes:

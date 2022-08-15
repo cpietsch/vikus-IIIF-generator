@@ -1,35 +1,32 @@
 FROM nvcr.io/nvidia/pytorch:22.05-py3
 
 ENV PYTHONUNBUFFERED True
+ENV PORT 5000
+ENV WORKER 4
+ENV TIMEOUT 60
+
+EXPOSE $PORT
 
 # Copy local code to the container image.
 COPY ./scripts /scripts
 WORKDIR /scripts
 
-#RUN apk add --no-cache gcc musl-dev linux-headers
-
-# install rust
-# RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
-# ENV PATH="/root/.cargo/bin:${PATH}"
-
 # Install production dependencies.
-#RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install -r requirements.txt
-RUN spacy download en_core_web_lg
+RUN pip install --no-cache-dir -r requirements.txt
+#RUN spacy download en_core_web_md
+RUN spacy download en_core_web_sm
 
 # download clip model to model/
 #RUN mkdir -p model
 #RUN wget -O model/clip.model https://huggingface.co/openai/clip-vit-base-patch32/resolve/main/pytorch_model.bin
 
-ENV PORT 5000
-EXPOSE $PORT
 
 # Using Debian, as root
 RUN curl -fsSL https://deb.nodesource.com/setup_17.x | bash -
 RUN apt-get install -y nodejs
 
 RUN git clone https://github.com/cpietsch/sharpsheet /modules/sharpsheet; cd /modules/sharpsheet; npm install;
+RUN exec python downloadModel.py
 
-#CMD exec gunicorn --bind :$PORT --workers 1 --threads 8 --timeout 0 main:app
-CMD exec python main.py
-
+#CMD exec uvicorn --port :$PORT --workers 1 --threads 8 --timeout 0 main:app
+CMD exec gunicorn main:app -w $WORKER --timeout $TIMEOUT -k uvicorn.workers.UvicornWorker

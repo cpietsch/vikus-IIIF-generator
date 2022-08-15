@@ -27,7 +27,7 @@ class MetadataExtractor:
         total = len(manifests)
 
         for manifest in manifests:
-        #for manifest in track(manifests, description="Extracting keywords and metadata"):
+            # for manifest in track(manifests, description="Extracting keywords and metadata"):
             metadata = manifest.getMetadata()
             keywords = "None"
             if extract_keywords:
@@ -49,21 +49,21 @@ class MetadataExtractor:
                     'completed': completed
                 })
         if self.cache is not None:
-                progress = 1
-                await self.cache.postProgress(instanceId, {
-                    'progress': progress,
-                    'task': 'metadata',
-                    'size': total,
-                    'completed': completed
-                })
+            progress = 1
+            await self.cache.postProgress(instanceId, {
+                'progress': progress,
+                'task': 'metadata',
+                'size': total,
+                'completed': completed
+            })
         return metadataList
 
     async def getKeywords(self, text, n=4):
         if self.cache is not None:
             cached = await self.cache.getKeywords(text)
             if cached is not None:
-                return cached.decode("utf-8") 
-            
+                return cached.decode("utf-8")
+
         doc = self.nlp(text)
         keywords = [keyword.text for keyword,
                     score in doc._.extract_keywords(n)]
@@ -89,8 +89,10 @@ class MetadataExtractor:
             },
         '''
         detailStructure = {}
+        print(metadataList)
         for metadata in metadataList:
             for key, value in metadata.items():
+                print("metadata is: ", key)
                 if key not in detailStructure:
                     detailStructure[key] = {
                         "name": key,
@@ -98,6 +100,8 @@ class MetadataExtractor:
                         "display": "wide",
                         "type": "text"
                     }
+        print(detailStructure)
+
         return detailStructure
 
 
