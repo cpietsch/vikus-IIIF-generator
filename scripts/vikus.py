@@ -1,3 +1,4 @@
+from ast import And
 import json
 import os
 import time
@@ -6,6 +7,7 @@ import asyncio
 import randomname
 import math
 
+from PIL import Image
 from rich import pretty
 from rich.logging import RichHandler
 
@@ -165,7 +167,7 @@ async def makeMetadata(manifests, instanceId, path, extract_keywords=True):
 
 
 @duration
-async def makeSpritesheets(files, instanceId, projectPath, spritesheetPath, spriteSize=128):
+async def makeSpritesheets(files, instanceId, projectPath, spritesheetPath, spriteSize=226):
     spriter = Sharpsheet(logger=logger, instanceId=instanceId)
     thumbnailPath = createFolder("{}/images/thumbs".format(projectPath))
     # delete existing spritesheets
@@ -175,13 +177,27 @@ async def makeSpritesheets(files, instanceId, projectPath, spritesheetPath, spri
         os.remove(os.path.join(thumbnailPath, file))
 
     # make for each file a symlink into the thumbnailPath folder
+    # for id, file in files:
+    #     filePath = os.path.abspath(file)
+    #     symlinkFile = os.path.join(thumbnailPath, id + ".jpg")
+    #     if not os.path.exists(symlinkFile):
+    #         os.symlink(filePath, symlinkFile)
+
+    # resize images to max 128x128 and save to thumbnailPath
+    # spriteSize = calculateThumbnailSize(len(files))
     for id, file in files:
         filePath = os.path.abspath(file)
-        symlinkFile = os.path.join(thumbnailPath, id + ".jpg")
-        if not os.path.exists(symlinkFile):
-            os.symlink(filePath, symlinkFile)
+        thumbnailFile = os.path.join(thumbnailPath, id + ".jpg")
+        if not os.path.exists(thumbnailFile):
+            resizeImage(filePath, thumbnailFile, spriteSize)
 
     await spriter.generateFromPath(thumbnailPath, outputPath=spritesheetPath, spriteSize=spriteSize)
+
+
+def resizeImage(filePath, thumbnailFile, spriteSize):
+    im = Image.open(filePath)
+    im.thumbnail((spriteSize, spriteSize))
+    im.save(thumbnailFile)
 
 
 @duration
@@ -200,7 +216,7 @@ async def makeUmap(features, instanceId, path, ids, n_neighbors=15, min_dist=0.2
     umaper = DimensionReduction(n_neighbors=n_neighbors, min_dist=min_dist)
     embedding = umaper.fit_transform(features)
     print(raster_fairy)
-    if raster_fairy:
+    if raster_fairy and len(embedding) > 100:
         embedding = umaper.rasterfairy(embedding)
     umaper.saveToCsv(embedding, path, ids)
     return path

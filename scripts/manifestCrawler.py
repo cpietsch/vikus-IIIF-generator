@@ -101,16 +101,16 @@ class ManifestCrawler:
                                 (prio + 1 + random.uniform(0, 1), child))
 
                 self.completed += 1
-
                 progress = self.completed / self.size
 
-                await self.cache.postProgress(self.instanceId, {
-                    'progress': progress,
-                    'task': 'collection',
-                    'queue': queue.qsize(),
-                    'size': self.size,
-                    'completed': self.completed
-                })
+                if(self.completed % 10 == 0):
+                    await self.cache.postProgress(self.instanceId, {
+                        'progress': progress,
+                        'task': 'collection',
+                        'queue': queue.qsize(),
+                        'size': self.size,
+                        'completed': self.completed
+                    })
                 # await self.cache.redis.publish(self.instanceId, json.dumps({'task': 'crawlingManifest', 'queue': queue.qsize(), 'completed': self.completed, 'type': manifest.type}))
 
                 self.logger.debug(

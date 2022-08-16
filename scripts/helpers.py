@@ -6,16 +6,14 @@ from unittest import case
 
 
 def calculateThumbnailSize(num):
-    if num < 200:
-        return 256
-    elif num < 1000:
-        return 128
+    if num < 1000:
+        return 224
     elif num < 6000:
-        return 64
+        return 128
     elif num < 10000:
-        return 32
+        return 64
     else:
-        return 8
+        return 32
 
 
 def duration(func):

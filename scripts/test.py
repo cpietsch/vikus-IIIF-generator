@@ -1,4 +1,4 @@
-from vikus import crawlCollection
+from vikus import crawlCollection, crawlImages, makeFeatures, makeSpritesheets
 import json
 import os
 import time
@@ -24,6 +24,7 @@ from sharpsheet import Sharpsheet
 from featureExtractor import FeatureExtractor
 from metadataExtractor import MetadataExtractor
 
+
 import pandas as pd
 from pandas.io.json import json_normalize
 
@@ -47,11 +48,18 @@ logger = logging.getLogger('rich')
 
 async def main():
     manifests = await crawlCollection(url, "test", numWorkers=10)
-    manifests = manifests[:100]
-
-    print("{} manifests".format(len(manifests)))
-    for manifest in manifests:
-        print(manifest.id, manifest.getThumbnailUrl())
+    manifestsSub = manifests  # [:1000]
+    print("{} manifests".format(len(manifestsSub)))
+    images = await crawlImages(manifestsSub, "test", numWorkers=10)
+    print("Images: {}".format(len(images)))
+    # features = await makeFeatures(images, "test", batchSize=32)
+    # print("{} features".format(len(features)))
+    spriteSize = calculateThumbnailSize(len(manifests))
+    projectPath = createFolder("../data/test")
+    spritesheetPath = createFolder("{}/images/sprites".format(projectPath))
+    await makeSpritesheets(images, "test", projectPath, spritesheetPath, spriteSize)
+    # for manifest in manifests:
+    #     print(manifest.id, manifest.getThumbnailUrl())
     # metadataExtractor = MetadataExtractor()
     # metadata = metadataExtractor.extract(manifests)
     # details = metadataExtractor.makeDetailStructure(metadata)

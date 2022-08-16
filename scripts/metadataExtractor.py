@@ -89,10 +89,10 @@ class MetadataExtractor:
             },
         '''
         detailStructure = {}
-        print(metadataList)
+        # print(metadataList)
         for metadata in metadataList:
             for key, value in metadata.items():
-                print("metadata is: ", key)
+                # print("metadata is: ", key)
                 if key not in detailStructure:
                     detailStructure[key] = {
                         "name": key,
@@ -100,7 +100,7 @@ class MetadataExtractor:
                         "display": "wide",
                         "type": "text"
                     }
-        print(detailStructure)
+        # print(detailStructure)
 
         return detailStructure
 

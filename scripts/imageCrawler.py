@@ -40,13 +40,13 @@ class ImageCrawler:
             os.makedirs(self.path)
 
     def addFromManifests(self, manifests):
-        thumbnailSize = calculateThumbnailSize(len(manifests))
-        print("thumbnailSize {}".format(thumbnailSize))
+        #thumbnailSize = calculateThumbnailSize(len(manifests))
+        #print("thumbnailSize {}".format(thumbnailSize))
 
         for manifest in manifests:
-            self.addFromManifest(manifest, thumbnailSize)
+            self.addFromManifest(manifest)
 
-    def addFromManifest(self, manifest, size=128):
+    def addFromManifest(self, manifest, size=224):
         thumbnailUrl = manifest.getThumbnailUrl(size)
         id = manifest.getId()
         self.logger.debug("adding {}".format(thumbnailUrl))
@@ -100,26 +100,32 @@ class ImageCrawler:
                     return
 
                 self.logger.debug("{} downloading {}".format(name, url))
-                filepath = await self.download(url, id, session)
-                if filepath is not None:
+                try:
+                    downloadedFile = await self.download(url, id, session)
+                except Exception as e:
+                    self.logger.error("{} {}".format(name, e))
+                    downloadedFile = None
+
+                if downloadedFile is not None:
                     self.logger.debug("{} downloaded {}".format(name, url))
-                    self.done.append((id, filepath))
+                    self.done.append((id, downloadedFile))
                     if self.callback != None:
-                        self.callback(id, filepath)
+                        self.callback(id, downloadedFile)
                 else:
-                    self.logger.debug(
+                    self.logger.error(
                         "{} failed to download {}".format(name, url))
 
                 self.completed += 1
                 progress = self.completed / self.size
                 # progress.update(task, advance=1)
-                await self.cache.postProgress(self.instanceId, {
-                    'progress': progress,
-                    'size': self.size,
-                    'task': 'images',
-                    'queue': self.queue.qsize(),
-                    'completed': self.completed
-                })
+                if(self.completed % 10 == 0):
+                    await self.cache.postProgress(self.instanceId, {
+                        'progress': progress,
+                        'size': self.size,
+                        'task': 'images',
+                        'queue': self.queue.qsize(),
+                        'completed': self.completed
+                    })
                 # await self.cache.redis.publish(self.instanceId, json.dumps({'task': 'crawlingImages', 'queue': self.queue.qsize() }))
 
                 self.logger.debug(
