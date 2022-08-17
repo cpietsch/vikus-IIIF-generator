@@ -2,7 +2,7 @@ import functools
 import os
 import time
 import asyncio
-from unittest import case
+from PIL import Image
 
 
 def calculateThumbnailSize(num):
@@ -14,6 +14,12 @@ def calculateThumbnailSize(num):
         return 64
     else:
         return 32
+
+
+def resizeImage(inputFile, outputFile, spriteSize):
+    im = Image.open(inputFile)
+    im.thumbnail((spriteSize, spriteSize))
+    im.save(outputFile)
 
 
 def duration(func):

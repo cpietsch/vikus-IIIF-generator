@@ -7,7 +7,6 @@ import asyncio
 import randomname
 import math
 
-from PIL import Image
 from rich import pretty
 from rich.logging import RichHandler
 
@@ -25,8 +24,6 @@ from sharpsheet import Sharpsheet
 from featureExtractor import FeatureExtractor
 from metadataExtractor import MetadataExtractor
 
-import pandas as pd
-from pandas.io.json import json_normalize
 
 pretty.install()
 
@@ -170,21 +167,12 @@ async def makeMetadata(manifests, instanceId, path, extract_keywords=True):
 async def makeSpritesheets(files, instanceId, projectPath, spritesheetPath, spriteSize=226):
     spriter = Sharpsheet(logger=logger, instanceId=instanceId)
     thumbnailPath = createFolder("{}/images/thumbs".format(projectPath))
-    # delete existing spritesheets
+
     for file in os.listdir(spritesheetPath):
         os.remove(os.path.join(spritesheetPath, file))
     for file in os.listdir(thumbnailPath):
         os.remove(os.path.join(thumbnailPath, file))
 
-    # make for each file a symlink into the thumbnailPath folder
-    # for id, file in files:
-    #     filePath = os.path.abspath(file)
-    #     symlinkFile = os.path.join(thumbnailPath, id + ".jpg")
-    #     if not os.path.exists(symlinkFile):
-    #         os.symlink(filePath, symlinkFile)
-
-    # resize images to max 128x128 and save to thumbnailPath
-    # spriteSize = calculateThumbnailSize(len(files))
     for id, file in files:
         filePath = os.path.abspath(file)
         thumbnailFile = os.path.join(thumbnailPath, id + ".jpg")
@@ -192,12 +180,6 @@ async def makeSpritesheets(files, instanceId, projectPath, spritesheetPath, spri
             resizeImage(filePath, thumbnailFile, spriteSize)
 
     await spriter.generateFromPath(thumbnailPath, outputPath=spritesheetPath, spriteSize=spriteSize)
-
-
-def resizeImage(filePath, thumbnailFile, spriteSize):
-    im = Image.open(filePath)
-    im.thumbnail((spriteSize, spriteSize))
-    im.save(thumbnailFile)
 
 
 @duration
