@@ -5,8 +5,7 @@ from imp import reload
 import json
 import uuid
 from warnings import catch_warnings
-from zipfile import ZipFile
-import zipfile
+
 from torch import absolute
 from traitlets import Integer
 import uvicorn
@@ -27,7 +26,7 @@ import uuid
 from helpers import calculateThumbnailSize
 
 # from cache import Cache
-from vikus import create_config_json, crawlCollection, crawlImages, makeMetadata, makeSpritesheets, saveConfig, create_info_md, makeFeatures, makeUmap, cache
+from vikus import create_config_json, crawlCollection, crawlImages, makeMetadata, makeSpritesheets, saveConfig, makeZip, makeFeatures, makeUmap, cache
 from connectionManager import ConnectionManager
 
 LOGGER = logging.getLogger(__name__)
@@ -71,9 +70,12 @@ DEFAULTS = {
         "skip_cache": False,
     },
     "features": {
-        "batch_size": 64,
+        "batch_size": 16,
+        "skip_cache": False,
     },
-    "metadata": {},
+    "metadata": {
+        "skip_cache": False,
+    },
     "spritesheets": {},
     "umap": {
         "n_neighbors": 15,
@@ -198,7 +200,11 @@ async def crawl_images(
 @app.post("/instances/steps/metadata")
 async def make_metadata(
     instance_id: str = Query(title="Instance ID", description="Instance ID"),
-    # extract_keywords: bool = Query(default=True,title="Extract keywords", description="Extract keywords"),
+    skip_cache: bool = Query(
+        default=DEFAULTS["metadata"]["skip_cache"],
+        title="Skip cache",
+        description="Skip read cache and save value to cache"
+    )
 ):
     """
     Create a metadata file for all images in a IIIF collection.
@@ -211,11 +217,13 @@ async def make_metadata(
     config = InstanceManager[instance_id]["config"]
     manifests = InstanceManager[instance_id]["manifests"]
 
-    metadata = await makeMetadata(manifests, instance_id, config["path"])
+    metadata = await makeMetadata(manifests, instance_id, config["path"], skip_cache=skip_cache)
 
     config["metadata"] = True
     config["metadataFile"] = metadata["file"]
-    saveConfig(config, metadata["metadata"])
+    config["metadataStructure"] = metadata["structure"]
+
+    saveConfig(config)
 
     return config
 
@@ -245,9 +253,20 @@ async def make_spritesheets(
 
 @app.post("/instances/steps/features")
 async def make_features(
-    instance_id: str = Query(title="Instance ID", description="Instance ID"),
-    batch_size: int = Query(DEFAULTS["features"]["batch_size"], title="Batch Size",
-                            description="Batch size for the feature extraction"),
+    instance_id: str = Query(
+        title="Instance ID",
+        description="Instance ID"
+    ),
+    batch_size: int = Query(
+        default=DEFAULTS["features"]["batch_size"],
+        title="Batch Size",
+        description="Batch size for the feature extraction"
+    ),
+    skip_cache: bool = Query(
+        default=DEFAULTS["features"]["skip_cache"],
+        title="Skip cache",
+        description="Skip read cache and save value to cache"
+    )
 ):
     """
     Create a CLIP features fo all images in a IIIF collection given the downloaded thumbnails.
@@ -258,7 +277,7 @@ async def make_features(
     config = InstanceManager[instance_id]["config"]
     images = InstanceManager[instance_id]["images"]
 
-    features = await makeFeatures(images, instance_id, batch_size)
+    features = await makeFeatures(images, instance_id, batch_size, skip_cache)
 
     InstanceManager[instance_id].update({
         "features": features
@@ -283,7 +302,7 @@ async def make_umap(
     Create a UMAP embedding based on the CLIP features.
     """
     if instance_id not in InstanceManager or "features" not in InstanceManager[instance_id]:
-        await make_features(instance_id, batch_size=DEFAULTS["features"]["batch_size"])
+        await make_features(instance_id, batch_size=DEFAULTS["features"]["batch_size"], skip_cache=DEFAULTS["features"]["skip_cache"])
 
     config = InstanceManager[instance_id]["config"]
     (ids, features) = InstanceManager[instance_id]["features"]
@@ -301,25 +320,18 @@ async def make_zip(instance_id: str):
     """
     Create a zip file for the data folder of VIKUS Viewer
     """
+    config = read_instance(instance_id)
+
+    # todo: if zip file already exists, do not create a new one
     if instance_id not in InstanceManager:
         await run(instance_id)
 
     config = InstanceManager[instance_id]["config"]
-    path = config["path"]
-    zipPath = os.path.join(path, "project.zip")
-    with ZipFile(zipPath, 'w', zipfile.ZIP_DEFLATED) as zip:
-        for dirpath, dirnames, filenames in os.walk(path):
-            for filename in filenames:
-                if filename == "project.zip":
-                    continue
-                if "thumbs" in dirpath:
-                    continue
-                zip.write(os.path.join(dirpath, filename),
-                          os.path.relpath(os.path.join(dirpath, filename),
-                                          os.path.join(path, '..')))
+
+    zipFile = await makeZip(config["path"], instance_id)
 
     config["zip"] = True
-    config["zipFile"] = instance_id + "/project.zip"
+    config["zipFile"] = zipFile
     saveConfig(config)
 
     return config
@@ -331,10 +343,10 @@ async def run(instance_id: str = Query(title="Instance ID", description="Instanc
     print("Running instance {}".format(instance_id))
     await crawl_collection(instance_id, worker=DEFAULTS["collection"]["worker"], depth=DEFAULTS["collection"]["depth"], skip_cache=DEFAULTS["collection"]["skip_cache"])
     await crawl_images(instance_id, worker=DEFAULTS["images"]["worker"], skip_cache=DEFAULTS["images"]["skip_cache"])
-    await make_metadata(instance_id)
     await make_spritesheets(instance_id)
-    await make_features(instance_id, batch_size=DEFAULTS["features"]["batch_size"])
+    await make_features(instance_id, batch_size=DEFAULTS["features"]["batch_size"], skip_cache=DEFAULTS["features"]["skip_cache"])
     await make_umap(instance_id, n_neighbors=DEFAULTS["umap"]["n_neighbors"], min_distance=DEFAULTS["umap"]["min_distance"], raster_fairy=DEFAULTS["umap"]["raster_fairy"])
+    await make_metadata(instance_id, skip_cache=DEFAULTS["metadata"]["skip_cache"])
     await make_zip(instance_id)
 
     config = InstanceManager[instance_id]["config"]

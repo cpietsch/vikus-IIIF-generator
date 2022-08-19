@@ -7,6 +7,9 @@ import asyncio
 import randomname
 import math
 
+from zipfile import ZipFile
+import zipfile
+
 from PIL import Image
 from rich import pretty
 from rich.logging import RichHandler
@@ -62,24 +65,23 @@ def create_info_md(config):
         f.write("# {}\n{}\n".format(config["label"], config["iiif_url"]))
 
 
-def create_data_json(config, metadata=None):
+def create_data_json(config):
     path = config['path']
     dataPath = os.path.join(path, "config.json")
-    # load json from "files/data.json"
     with open("files/config.json", "r") as f:
         data = json.load(f)
 
     data["project"]["name"] = config["label"]
+
     columns = 100
     if "numImages" in config:
         columns = math.isqrt(int(config["numImages"] * 3))
         data["loader"]["textures"]["medium"]["size"] = calculateThumbnailSize(
             int(config["numImages"]))
     data["projection"]["columns"] = columns
-    # this needs to be refactored
-    if metadata is not None:
-        data["detail"]["structure"] = metadataExtractor.makeDetailStructure(
-            metadata)
+
+    if "metadataStructure" in config:
+        data["detail"]["structure"] = config["metadataStructure"]
 
     with open(dataPath, "w") as f:
         f.write(json.dumps(data, indent=4))
@@ -112,14 +114,14 @@ def create_config_json(iiif_url: str, label: str):
     return config
 
 
-def saveConfig(config, metadata=None):
+def saveConfig(config):
     config["updated"] = int(time.time())
     with open(os.path.join(config['path'], "instance.json"), "w") as f:
         f.write(json.dumps(config, indent=4))
 
     # this needs to be outside of this function
     create_info_md(config)
-    create_data_json(config, metadata)
+    create_data_json(config)
 
 
 @duration
@@ -154,16 +156,18 @@ async def crawlImages(manifests, instanceId, numWorkers=IMAGEWORKERS, skip_cache
 
 
 @duration
-async def makeMetadata(manifests, instanceId, path, extract_keywords=True):
+async def makeMetadata(manifests, instanceId, path, extract_keywords=True, skip_cache=False):
     file = path + '/metadata.csv'
+    metadataExtractor.skipCache = skip_cache
     metadata = await metadataExtractor.extract(
         manifests,
         extract_keywords=extract_keywords,
         instanceId=instanceId
     )
     metadataExtractor.saveToCsv(metadata, file)
+    structure = metadataExtractor.makeDetailStructure(metadata)
 
-    return {'file': file, 'metadata': metadata}
+    return {'file': file, 'structure': structure}
 
 
 @duration
@@ -201,9 +205,9 @@ def resizeImage(filePath, thumbnailFile, spriteSize):
 
 
 @duration
-async def makeFeatures(files, instanceId, batchSize):
+async def makeFeatures(files, instanceId, batchSize, skip_cache=False):
     featureExtractor = FeatureExtractor(
-        cache=cache, overwrite=False, instanceId=instanceId)
+        cache=cache, overwrite=False, instanceId=instanceId, skipCache=skip_cache)
     featureExtractor.load_model()
     features = await featureExtractor.batch_extract_features_cached(files, batchSize)
     # print(features)
@@ -220,6 +224,23 @@ async def makeUmap(features, instanceId, path, ids, n_neighbors=15, min_dist=0.2
         embedding = umaper.rasterfairy(embedding)
     umaper.saveToCsv(embedding, path, ids)
     return path
+
+
+@duration
+async def makeZip(path, instanceId, fileName="project.zip"):
+    zipPath = os.path.join(path, fileName)
+    with ZipFile(zipPath, 'w', zipfile.ZIP_DEFLATED) as zip:
+        for dirpath, dirnames, filenames in os.walk(path):
+            for filename in filenames:
+                if filename == fileName:
+                    continue
+                if "thumbs" in dirpath:
+                    continue
+                zip.write(os.path.join(dirpath, filename),
+                          os.path.relpath(os.path.join(dirpath, filename),
+                                          os.path.join(path, '..')))
+
+    return zipPath
 
 
 async def test(url, path, instanceId):

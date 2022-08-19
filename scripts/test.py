@@ -52,12 +52,14 @@ async def main():
     print("{} manifests".format(len(manifestsSub)))
     images = await crawlImages(manifestsSub, "test", numWorkers=10)
     print("Images: {}".format(len(images)))
-    # features = await makeFeatures(images, "test", batchSize=32)
-    # print("{} features".format(len(features)))
-    spriteSize = calculateThumbnailSize(len(manifests))
-    projectPath = createFolder("../data/test")
-    spritesheetPath = createFolder("{}/images/sprites".format(projectPath))
-    await makeSpritesheets(images, "test", projectPath, spritesheetPath, spriteSize)
+    features = await makeFeatures(images, "test", batchSize=32)
+    print("{} features".format(len(features)))
+
+    # spriteSize = calculateThumbnailSize(len(manifests))
+    # projectPath = createFolder("../data/test")
+    # spritesheetPath = createFolder("{}/images/sprites".format(projectPath))
+    # await makeSpritesheets(images, "test", projectPath, spritesheetPath, spriteSize)
+
     # for manifest in manifests:
     #     print(manifest.id, manifest.getThumbnailUrl())
     # metadataExtractor = MetadataExtractor()

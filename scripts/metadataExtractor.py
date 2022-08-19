@@ -12,6 +12,7 @@ class MetadataExtractor:
             'logger', logging.getLogger('MetadataExtractor'))
         self.nlp = None
         self.cache = kwargs.get('cache', None)
+        self.skipCache = kwargs.get('skipCache', False)
 
     def load(self):
         if self.nlp is None:
@@ -59,7 +60,7 @@ class MetadataExtractor:
         return metadataList
 
     async def getKeywords(self, text, n=4):
-        if self.cache is not None:
+        if self.cache is not None and not self.skipCache:
             cached = await self.cache.getKeywords(text)
             if cached is not None:
                 return cached.decode("utf-8")

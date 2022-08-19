@@ -30,7 +30,6 @@ class ImageCrawler:
         self.logger.debug("init crawler")
         self.tasks = []
         self.done = []
-        self.overwrite = kwargs.get('overwrite', False)
         self.instanceId = kwargs.get('instanceId', 'default')
         self.size = 0
         self.completed = 0
