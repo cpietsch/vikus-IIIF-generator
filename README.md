@@ -1,12 +1,22 @@
 # vikus-docker
-VIKUS Docker instance builder
+VIKUS Viewer Docker instance builder for IIIF Collections
 
-## WORK IN PROGRESS
-This is a preview of the VIKUS Viewer Docker instance builder
-https://github.com/cpietsch/vikus-docker-frontend/
 
 # RUN
 docker compose up
+
+## rebuild the image
+docker-compose down
+docker-compose up -d
+
+# Usage
+Open the VIKUS Docker frontend in a browser:
+http://localhost:8000/frontend
+
+
+# Related projects
+- https://github.com/cpietsch/vikus-docker-frontend/
+- https://github.com/cpietsch/vikus-viewer (docker branch)
 
 
 # Notebooks
