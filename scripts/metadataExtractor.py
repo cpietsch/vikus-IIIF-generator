@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import spacy
 import spacy_ke
 import pandas as pd
@@ -14,9 +15,11 @@ class MetadataExtractor:
         self.cache = kwargs.get('cache', None)
         self.skipCache = kwargs.get('skipCache', False)
 
-    def load(self):
+    def load(self, useGpu = False):
         if self.nlp is None:
             # spacy.load("en_core_web_md")
+            if useGpu or ("USEGPU" in os.environ and os.environ['USEGPU'] is True):
+                spacy.prefer_gpu()
             self.nlp = spacy.load("en_core_web_sm")
             self.nlp.add_pipe("yake")
 
