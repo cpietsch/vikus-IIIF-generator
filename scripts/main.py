@@ -11,8 +11,6 @@ from traitlets import Integer
 import uvicorn
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect, Query
 from fastapi.middleware.cors import CORSMiddleware
-#from fastapi.responses import StreamingResponse
-#from sse_starlette.sse import EventSourceResponse
 from pathlib import Path
 from fastapi.params import Depends
 
@@ -25,7 +23,6 @@ import shutil
 import uuid
 from helpers import calculateThumbnailSize
 
-# from cache import Cache
 from vikus import create_config_json, crawlCollection, crawlImages, makeMetadata, makeSpritesheets, saveConfig, makeZip, makeFeatures, makeUmap, cache
 from connectionManager import ConnectionManager
 
@@ -33,13 +30,11 @@ LOGGER = logging.getLogger(__name__)
 
 DATA_DIR = "../data"
 
-# cache = Cache()
-
 app = FastAPI(
-    # title="Vikus Docker",
-    # description="https://github.com/cpietsch/vikus-docker",
-    # version="0.0.1",
-    # license_info="MIT",
+    title="Vikus Docker",
+    description="Vikus Docker",
+    version="0.1.0",
+    docs_url="/docs",
 )
 manager = ConnectionManager()
 
@@ -110,14 +105,18 @@ def list_instances():
 
 @app.post("/instances")
 async def create_instance(url: str, label: str = None):
+    """
+    Create a new instance using the given url.
+    """
     config = create_config_json(url, label)
-
-    print(config)
     return config
 
 
 @app.get("/instances/{instance_id}")
 def read_instance(instance_id: str):
+    """
+    Read the config.json of the given instance.
+    """
     path = os.path.join(DATA_DIR, instance_id)
     if not os.path.isdir(path):
         return {"error": "Instance {} doesn't exist".format(instance_id)}, 404
@@ -339,8 +338,9 @@ async def make_zip(instance_id: str):
 
 @app.post("/instances/generate")
 async def run(instance_id: str = Query(title="Instance ID", description="Instance ID")):
-    # run all steps
-    print("Running instance {}".format(instance_id))
+    """
+    Run all steps of the pipeline for a given instance.
+    """
     await crawl_collection(instance_id, worker=DEFAULTS["collection"]["worker"], depth=DEFAULTS["collection"]["depth"], skip_cache=DEFAULTS["collection"]["skip_cache"])
     await crawl_images(instance_id, worker=DEFAULTS["images"]["worker"], skip_cache=DEFAULTS["images"]["skip_cache"])
     await make_spritesheets(instance_id)
@@ -356,14 +356,47 @@ async def run(instance_id: str = Query(title="Instance ID", description="Instanc
 
 @app.delete("/instances/{instance_id}")
 def delete_instance(instance_id: str = Query(title="Instance ID", description="Instance ID")):
+    """
+    Delete an instance.
+    """
+    if instance_id in InstanceManager:
+        del InstanceManager[instance_id]
     path = os.path.join(DATA_DIR, instance_id)
     if not os.path.isdir(path):
         return {"error": "Instance {} doesn't exist".format(instance_id)}, 404
-    shutil.rmtree(path)
+    else:
+        shutil.rmtree(path)
     return {"id": instance_id, "absolutePath": path, "label": instance_id, "status": "deleted"}
 
-# @app.post("/instances/defaults")
-# async def defaults():
+
+@app.get("/defaults")
+def get_defaults():
+    """
+    Get the default values for the pipeline.
+    """
+    return DEFAULTS
+
+
+@app.post("/defaults")
+def set_defaults(defaults: dict):
+    """
+    Set the default values for the pipeline.
+    """
+    global DEFAULTS
+    # check if all keys are in defaults
+    for key in defaults:
+        if key not in DEFAULTS:
+            return {"error": "Key {} is not in defaults".format(key)}, 400
+        if type(defaults[key]) != type(DEFAULTS[key]):
+            return {"error": "Type of key {} is not the same as in defaults".format(key)}, 400
+        for subkey in defaults[key]:
+            if subkey not in DEFAULTS[key]:
+                return {"error": "Subkey {} is not in defaults".format(subkey)}, 400
+            if type(defaults[key][subkey]) != type(DEFAULTS[key][subkey]):
+                return {"error": "Type of subkey {} is not the same as in defaults".format(subkey)}, 400
+    DEFAULTS = defaults
+
+    return DEFAULTS
 
 
 @app.websocket("/instances/{instance_id}/ws")
@@ -393,44 +426,6 @@ async def websocket_endpoint(websocket: WebSocket, instance_id: str):
     except Exception as e:
         manager.disconnect(websocket)
         print("Disconnected", instance_id)
-
-
-# @app.get("/instances/{instance_id}/eventStream")
-# async def stream(req: Request, instance_id: str = "default"):
-#     return EventSourceResponse(subscribe(req, instance_id))
-
-
-# async def subscribe(req: Request, instance_id: str = "default"):
-#     try:
-#         async with cache.psub as p:
-#             print("start subscribe")
-#             try:
-#                 await p.subscribe(instance_id)
-#             except Exception as e:
-#                 print("subscribe error", e)
-
-#             print("subscribed")
-#             yield {"event": "open", "data": "subscribed to {}".format(instance_id)}
-#             while True:
-#                 disconnected = await req.is_disconnected()
-#                 if disconnected:
-#                     print(f"Disconnecting client {req.client}")
-#                     break
-#                 message = await p.get_message(ignore_subscribe_messages=True)
-#                 # print("message")
-#                 if message is not None:
-#                     # print(message)
-#                     yield {"event": "message", "data": message["data"].decode("utf-8")}
-#                 await asyncio.sleep(0.01)
-#     # except asyncio.CancelledError as e:
-#     except Exception as e:
-#         print(f"Error {e}")
-
-#     finally:
-#         print(f"Closing client {req.client}")
-
-#     await p.unsubscribe(instance_id)
-#     yield {"event": "close", "data": "unsubscribed from {}".format(instance_id)}
 
 
 if __name__ == "__main__":
