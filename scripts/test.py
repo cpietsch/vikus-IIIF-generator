@@ -48,12 +48,12 @@ logger = logging.getLogger('rich')
 
 async def main():
     manifests = await crawlCollection(url, "test", numWorkers=10)
-    manifestsSub = manifests  # [:1000]
+    manifestsSub = manifests #[:1000]
     print("{} manifests".format(len(manifestsSub)))
     images = await crawlImages(manifestsSub, "test", numWorkers=10)
     print("Images: {}".format(len(images)))
-    features = await makeFeatures(images, "test", batchSize=32)
-    print("{} features".format(len(features)))
+    # ids, features = await makeFeatures(images, "test", batchSize=128, skip_cache=True)
+    # print("{} features".format(len(features)))
 
     # spriteSize = calculateThumbnailSize(len(manifests))
     # projectPath = createFolder("../data/test")
@@ -62,8 +62,9 @@ async def main():
 
     # for manifest in manifests:
     #     print(manifest.id, manifest.getThumbnailUrl())
-    # metadataExtractor = MetadataExtractor()
-    # metadata = metadataExtractor.extract(manifests)
+    metadataExtractor = MetadataExtractor(skipCache=False)
+    metadataExtractor.load(useGpu=True)
+    metadata = await metadataExtractor.extract(manifests)
     # details = metadataExtractor.makeDetailStructure(metadata)
     # print(metadata)
 

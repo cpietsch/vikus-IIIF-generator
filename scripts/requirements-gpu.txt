@@ -2,8 +2,6 @@ markupsafe==2.0.1
 gunicorn
 transformers
 Pillow
-torch
-torchvision
 redis
 rich
 aiohttp
@@ -18,6 +16,6 @@ fastapi
 uvicorn[standard]
 aioredis
 randomname
-spacy
+spacy[cuda117]
 spacy_ke
 jupyterlab

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import spacy
 import spacy_ke
 import pandas as pd
@@ -14,9 +15,13 @@ class MetadataExtractor:
         self.cache = kwargs.get('cache', None)
         self.skipCache = kwargs.get('skipCache', False)
 
-    def load(self):
+    def load(self, useGpu = False):
         if self.nlp is None:
             # spacy.load("en_core_web_md")
+            #if useGpu or "USEGPU" in os.environ:
+                #print("using gpu")
+                # using GPU with spacy is slower than CPU
+                #spacy.prefer_gpu()
             self.nlp = spacy.load("en_core_web_sm")
             self.nlp.add_pipe("yake")
 
@@ -40,9 +45,10 @@ class MetadataExtractor:
                     keywords = await self.getKeywords(metadata['_label'])
             metadata['keywords'] = keywords
             metadataList.append(metadata)
-            if self.cache is not None:
-                progress = completed / total
-                completed += 1
+            
+            progress = completed / total
+            completed += 1
+            if self.cache is not None and completed % 100 == 0:  
                 await self.cache.postProgress(instanceId, {
                     'progress': progress,
                     'task': 'metadata',

@@ -1,16 +1,22 @@
 version: '3.4'
 
 services:
-  vikusdockerGpu:
+  vikusdocker-gpu:
     # image: vikusdocker
     build:
       context: .
       dockerfile: gpu.Dockerfile
-    command: tail -f /dev/null
     ports:
       - 5000:5000
+    command: tail -f /dev/null
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
     volumes:
       - ./data:/data
+      - ./scripts:/scripts
 
   redis:
     image: "redis:alpine"
