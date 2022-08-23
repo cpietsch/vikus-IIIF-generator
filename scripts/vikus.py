@@ -189,11 +189,12 @@ async def makeSpritesheets(files, instanceId, projectPath, spritesheetPath, spri
 
 @duration
 async def makeFeatures(files, instanceId, batchSize, skip_cache=False):
-    featureExtractor = FeatureExtractor(
-        cache=cache, overwrite=False, instanceId=instanceId, skipCache=skip_cache)
     device = "cpu"
-    if "USEGPU" in os.environ and os.environ['USEGPU'] is True:
-        device = os.environ['USEGPU']
+    if "USEGPU" in os.environ:
+        print("using GPU")
+        device = "cuda"
+    featureExtractor = FeatureExtractor(
+        cache=cache, overwrite=False, instanceId=instanceId, skipCache=skip_cache, device=device)
     featureExtractor.load_model(device)
     features = await featureExtractor.batch_extract_features_cached(files, batchSize)
     # print(features)

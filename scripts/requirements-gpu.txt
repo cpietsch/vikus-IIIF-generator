@@ -12,7 +12,6 @@ pandas
 yale-dhlab-rasterfairy
 fire
 markupsafe
-flask-restful-swagger
 fastapi
 uvicorn[standard]
 aioredis

@@ -211,11 +211,12 @@ class Manifest:
 
     def valueToStr(self, value):
         if isinstance(value, list):
-            return ",".join(value)
+            return ",".join([self.valueToStr(v) for v in value])
         elif isinstance(value, dict):
             return json.dumps(value)
         else:
             return str(value)
+      
 
     def getMetadata(self, arr=None):
         """
@@ -261,8 +262,9 @@ class Manifest:
                     value = next(iter(item.get('value').values()))[0]
 
                 arr["_" + label] = self.valueToStr(value)
-        except:
+        except Exception as e:
             self.logger.warning("error in metadata {}".format(self))
+            self.logger.warning(e)
 
         # print(list)
         return arr

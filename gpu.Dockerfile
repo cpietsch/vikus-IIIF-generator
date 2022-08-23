@@ -1,4 +1,4 @@
-FROM nvcr.io/nvidia/pytorch:22.05-py3
+FROM nvcr.io/nvidia/pytorch:22.07-py3
 
 ENV PYTHONUNBUFFERED True
 ENV PORT 5000

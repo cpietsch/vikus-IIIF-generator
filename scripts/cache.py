@@ -31,6 +31,15 @@ class Cache:
         encoded = a.tobytes()
         # Store encoded data in Redis
         return await self.redis.set("f{}".format(id), encoded)
+    
+    async def saveFeaturesBatch(self, ids, features):
+        pipe = self.redis.pipeline()
+
+        for id, feature in zip(ids, features):
+            encoded = feature.tobytes()
+            pipe.set("f{}".format(id), encoded)
+        return await pipe.execute()
+
 
     async def getFeatures(self, id):
         encoded = await self.redis.get("f{}".format(id))

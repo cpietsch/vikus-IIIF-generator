@@ -6,10 +6,12 @@ import torch
 import logging
 import numpy as np
 from transformers import CLIPProcessor, CLIPModel, CLIPFeatureExtractor
+from torchvision.transforms import Compose, Normalize, RandomResizedCrop, ColorJitter, ToTensor
+from torchvision import transforms
 #from transformers import AutoFeatureExtractor
 from rich.progress import track
 import os
-
+from torch.utils.data import DataLoader
 
 class FeatureExtractor:
     def __init__(self, **kwargs):
@@ -21,11 +23,12 @@ class FeatureExtractor:
         self.progress = kwargs.get('progress', None)
         self.skipCache = kwargs.get('skipCache', False)
         self.instanceId = kwargs.get('instanceId', None)
+        self.device = kwargs.get('device', 'cpu')
 
     @torch.no_grad()
-    def load_model(self, device="cpu", local=True):
+    def load_model(self, local=True):
         self.model_name = local and "models/clip/" or "openai/clip-vit-base-patch32"
-        self.device = device
+
         if(self.model is None):
             self.model = CLIPModel.from_pretrained(
                 self.model_name).to(self.device)
@@ -39,21 +42,23 @@ class FeatureExtractor:
 
     def prepareImage(self, image_path, resize=False):
         image = Image.open(image_path)
-        image = image.convert('RGB')
-        if(resize):
-            image = image.resize((224, 224))
+        #image = image.convert('RGB')
+        # if(resize):
+        #     image = image.resize((224, 224))
         return image
 
     @torch.no_grad()
     def extract_features(self, image_path):
         self.logger.debug("Extracting features from {}".format(image_path))
         image = self.prepareImage(image_path)
-        # print(image)
-        # print(image.size)
-        inputs = self.processor(
-            images=image, return_tensors="pt", padding=True, resize=True)
+
+        inputs = self.processor(images=image, return_tensors="pt")
+
+        if self.device == 'cuda':
+            inputs = inputs.to(self.device)
+        
         outputs = self.model.get_image_features(**inputs)
-        detached = outputs.detach().numpy()
+        detached = outputs.detach().cpu().numpy()
         return detached[0]
 
     @torch.no_grad()
@@ -71,6 +76,7 @@ class FeatureExtractor:
 
     @torch.no_grad()
     async def batch_extract_features_cached(self, imageList, batchSize=16):
+        # Oh boy, why don't I use DataLoader ?
         featuresList = []
         idList = []
         queueList = []
@@ -113,17 +119,21 @@ class FeatureExtractor:
         for batch in batchedImageList:
             images = [self.prepareImage(image_path)
                       for (id, image_path) in batch]
-            inputs = self.processor(
-                images=images, return_tensors="pt", padding=True)
+            inputs = self.processor(images=images, return_tensors="pt")
+            if self.device == 'cuda':
+                inputs = inputs.to(self.device)
+
             outputs = self.model.get_image_features(**inputs)
-            detached = outputs.detach().numpy()
+            detached = outputs.detach().cpu().numpy()
+            print(detached.shape)
             features.extend(detached)
             ids.extend([id for (id, image_path) in batch])
 
             if self.cache is not None:
-                for (id, feature) in zip(ids, features):
-                    self.logger.debug("Caching features for {}".format(id))
-                    await self.cache.saveFeatures(id, feature)
+                await self.cache.saveFeaturesBatch(ids, features)
+                # for (id, feature) in zip(ids, features):
+                #     self.logger.debug("Caching features for {}".format(id))
+                #     await self.cache.saveFeatures(id, feature)
 
             if self.cache is not None:
                 completed += len(batch)
@@ -152,7 +162,7 @@ class FeatureExtractor:
 
 
 async def main():
-    extractor = FeatureExtractor(skipCache=True)
+    extractor = FeatureExtractor(skipCache=True, device='cuda')
     extractor.load_model()
     testImagePath = 'files/test.png'
     features = extractor.extract_features(testImagePath)
