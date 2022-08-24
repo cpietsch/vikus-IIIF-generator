@@ -45,7 +45,7 @@ To use the VIKUS Docker instance, open the frontend in a browser at http://local
 
 If you want, you can fiddle with the settings of each step and/or run them individually. Once the process is finished, you can open a VIKUS Viewer preview, or download the data ZIP and extract it into the /data folder of the VIKUS Viewer.
 
-# Tech Stack
+## Tech
 - Python3
 - Redis
 - Huggingface Transformers
@@ -57,26 +57,23 @@ If you want, you can fiddle with the settings of each step and/or run them indiv
 - Svelte
 - Docker
 
-# API
+## API
 Open the VIKUS Docker API in a browser:
 http://localhost:3000/docs
 
 
-# Sub-projects
+## Sub-projects
 - https://github.com/cpietsch/vikus-docker-frontend/ (svelte)
 - https://github.com/cpietsch/vikus-viewer (docker branch)
 
-
-# Requirements
+## Requirements
 - Docker
 - Docker Compose
 
-
-# Notebooks
+## Notebooks
 To start the notebook server on port 5000 instead of the server, connect to the vikusdocker and run
 - `pip install jupyter-lab`
 - `jupyter-lab --port 5000`
 
-
-# Funding
+## Funding
 The work on this project was made possible through funding of the [Swiss Art Research Infrastructure (SARI)](https://swissartresearch.net/).
