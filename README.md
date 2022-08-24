@@ -4,6 +4,9 @@ This is a Docker instance builder for IIIF Collections (Presentation API 3.0), a
 This repository contains code to build a VIKUS Viewer Docker instance. This instance can be used to view IIIF Collections (Presentation 3.x API). The code will crawl all manifests in a IIIF Collection (v3) recursively, download an image of each canvas, and save it to disk. It will also create spritesheets and extract metadata from manifests. The code uses redis cache for manifests and feature vectors. The similarity layouts can be generated with UMAP and Rasterfairy. There is also a REST Api and websocket real time progress.
 The resulting ZIP archive for VIKUS Viewer can be downloaded.
 
+<img width="1166" alt="vikusdocker" src="https://user-images.githubusercontent.com/129529/186490880-1dffef6b-ba03-479c-985d-d32941d440b7.png">
+
+
 ## Features
 
 - Crawling of all manifests in a [IIIF Collection](https://iiif.io/api/presentation/3.0/) (v3) recursively
