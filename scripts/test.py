@@ -34,7 +34,7 @@ pretty.install()
 cache = Cache()
 
 url = "https://www.e-codices.unifr.ch/metadata/iiif/collection.json"
-url = "https://resource.swissartresearch.net/manifest/zbz-collection"
+url = "https://resource.swissartresearch.net/manifest/zbz-collection-100"
 
 logging.basicConfig(
     level=logging.DEBUG,

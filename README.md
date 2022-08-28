@@ -42,6 +42,19 @@ docker-compose down
 docker-compose up --force-recreate --build -d
 ```
 
+### CLI
+
+To run the CLI, run:
+
+```
+docker exec -it vikus-docker-vikusdocker-1 python cli.py https://resource.swissartresearch.net/manifest/zbz-collection-100
+```
+You can also use the CLI with the following [options](https://github.com/cpietsch/vikus-docker/blob/main/scripts/files/defaults.json):
+
+```
+python cli.py https://resource.swissartresearch.net/manifest/zbz-collection-100 collection.worker=1 collection.depth=1
+```
+
 ## Usage
 
 To use the VIKUS Docker instance, open the frontend in a browser at http://localhost:8000/frontend/. Paste an IIIF Collection (v3) URL and click "Create". Click "Generate" to run all the steps.

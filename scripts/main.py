@@ -53,31 +53,8 @@ app.add_middleware(
 
 InstanceManager = {}
 
-DEFAULTS = {
-    "collection": {
-        "worker": 4,
-        "depth": 0,
-        "skip_cache": False,
-    },
-    "images": {
-        "worker": 4,
-        "depth": 0,
-        "skip_cache": False,
-    },
-    "features": {
-        "batch_size": 16,
-        "skip_cache": False,
-    },
-    "metadata": {
-        "skip_cache": False,
-    },
-    "spritesheets": {},
-    "umap": {
-        "n_neighbors": 15,
-        "min_distance": 0.3,
-        "raster_fairy": False
-    }
-}
+# load defaults from json file "files/defaults.json"
+DEFAULTS = json.load(open("files/defaults.json"))
 
 
 @app.get("/")

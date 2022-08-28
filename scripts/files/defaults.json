@@ -1,0 +1,25 @@
+{
+    "collection": {
+        "worker": 4,
+        "depth": 0,
+        "skip_cache": false
+    },
+    "images": {
+        "worker": 4,
+        "depth": 0,
+        "skip_cache": false
+    },
+    "features": {
+        "batch_size": 16,
+        "skip_cache": false
+    },
+    "metadata": {
+        "skip_cache": false
+    },
+    "spritesheets": {},
+    "umap": {
+        "n_neighbors": 15,
+        "min_distance": 0.3,
+        "raster_fairy": false
+    }
+}
