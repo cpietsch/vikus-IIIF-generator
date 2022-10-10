@@ -90,4 +90,4 @@ To start the notebook server on port 5000 instead of the server, connect to the 
 - `jupyter-lab --port 5000`
 
 ## Funding
-The work on this project was made possible through funding of the [Swiss Art Research Infrastructure (SARI)](https://swissartresearch.net/).
+The work on this project was made possible through the [Swiss Art Research Infrastructure (SARI)](https://swissartresearch.net/) in the framework of the [Bilder der Schweiz Online](https://bso.swissartresearch.net) project funded by the [Stiftung Familie Fehlmann](https://stiftung-familie-fehlmann.ch/).
