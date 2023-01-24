@@ -1,5 +1,5 @@
-# VIKUS IFFF Generator
-This GitHub Repo contains code to build a VIKUS IFFF generator instance, which can be used to view IIIF Collections (Presentation 3.x API) with [VIKUS Viewer](https://github.com/cpietsch/vikus-viewer). The code crawls all manifests in a IIIF Collection (v3) recursively, downloads images of each canvas, creates spritesheets, extracts metadata, and generates similarity layouts using UMAP and Rasterfairy. The code also includes a REST API and websocket for real-time progress updates, and allows for the download of a ZIP archive for the VIKUS Viewer. The code uses redis cache for manifests and feature vectors and also extract embeddings with CLIP using huggingface transformers.
+# VIKUS IIIF Generator
+This GitHub Repo contains code to build a VIKUS IIIF generator instance, which can be used to view IIIF Collections (Presentation 3.x API) with [VIKUS Viewer](https://github.com/cpietsch/vikus-viewer). The code crawls all manifests in a IIIF Collection (v3) recursively, downloads images of each canvas, creates spritesheets, extracts metadata, and generates similarity layouts using UMAP and Rasterfairy. The code also includes a REST API and websocket for real-time progress updates, and allows for the download of a ZIP archive for the VIKUS Viewer. The code uses redis cache for manifests and feature vectors and also extract embeddings with CLIP using huggingface transformers.
 
 <img width="1166" alt="vikusdocker" src="https://user-images.githubusercontent.com/129529/186490880-1dffef6b-ba03-479c-985d-d32941d440b7.png">
 
@@ -54,7 +54,7 @@ python cli.py https://resource.swissartresearch.net/manifest/zbz-collection-100 
 
 ## Usage
 
-To use the VIKUS IFFF generator, open the frontend in a browser at http://localhost:8000/frontend/. Paste an IIIF Collection (v3) URL and click "Create". Click "Generate" to run all the steps.
+To use the VIKUS IIIF generator, open the frontend in a browser at http://localhost:8000/frontend/. Paste an IIIF Collection (v3) URL and click "Create". Click "Generate" to run all the steps.
 
 If you want, you can fiddle with the settings of each step and/or run them individually. Once the process is finished, you can open a VIKUS Viewer preview, or download the data ZIP and extract it into the /data folder of the VIKUS Viewer.
 
@@ -71,7 +71,7 @@ If you want, you can fiddle with the settings of each step and/or run them indiv
 - Docker
 
 ## API
-Open the VIKUS IFFF generator API in a browser:
+Open the VIKUS IIIF generator API in a browser:
 http://localhost:3000/docs
 
 
