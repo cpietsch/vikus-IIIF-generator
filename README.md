@@ -77,7 +77,7 @@ http://localhost:3000/docs
 
 ## Sub-projects
 - https://github.com/cpietsch/vikus-docker-frontend/ (svelte)
-- https://github.com/cpietsch/vikus-viewer (docker branch)
+- https://github.com/cpietsch/vikus-viewer
 
 ## Requirements
 - Docker
