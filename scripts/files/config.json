@@ -8,10 +8,8 @@
         "items": "metadata.csv",
         "layouts": [
             {
-                "title": "time"
-            },
-            {
-                "title": "UMAP",
+                "title": "similarity",
+                "scale": 0.7,
                 "url": "umap.csv"
             }
         ],

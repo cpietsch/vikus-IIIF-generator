@@ -128,7 +128,7 @@ async def crawlCollection(url, instanceId, numWorkers=MANIFESTWORKERS, limitRecu
     manifestCrawler = ManifestCrawler(
         cache=cache,
         limitRecursion=limitRecursion,
-        numWorkers=MANIFESTWORKERS,
+        numWorkers=numWorkers,
         instanceId=instanceId,
         skipCache=skip_cache
     )
