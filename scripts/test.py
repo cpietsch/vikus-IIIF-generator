@@ -26,7 +26,6 @@ from metadataExtractor import MetadataExtractor
 
 
 import pandas as pd
-from pandas.io.json import json_normalize
 
 pretty.install()
 
@@ -62,9 +61,9 @@ async def main():
 
     # for manifest in manifests:
     #     print(manifest.id, manifest.getThumbnailUrl())
-    metadataExtractor = MetadataExtractor(skipCache=False)
-    metadataExtractor.load(useGpu=True)
-    metadata = await metadataExtractor.extract(manifests)
+    # metadataExtractor = MetadataExtractor(skipCache=False)
+    # metadataExtractor.load(useGpu=True)
+    # metadata = await metadataExtractor.extract(manifests)
     # details = metadataExtractor.makeDetailStructure(metadata)
     # print(metadata)
 

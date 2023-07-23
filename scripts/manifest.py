@@ -115,26 +115,30 @@ class Manifest:
 
     def getLargeImageUrl(self, max=4096):
         try:
-            body = self.data.get('items')[0].get('items')[0].get('body')
-            service = body.get('service')[0]
-            if service.get("@type") == "ImageService2":
-                width = service.get("width")
-                height = service.get("height")
+            body = self.data.get('items')[0].get('body') or self.data.get('items')[0].get('items')[0].get('body') or self.data.get('items')[0].get('items')[0].get('items')[0].get('body')
 
-                if width > max or height > max:
-                    if(width > height):
-                        ratio = max / width
-                    else:
-                        ratio = max / height
+            # look for ImageService3 first
+            services = body.get("service")
+            service = next((s for s in services if s.get("type") == "ImageService3"), None)
+            
+            # if service.get("@type") == "ImageService2":
+            #     width = service.get("width")
+            #     height = service.get("height")
 
-                    return "{}/full/{},{}/0/default.jpg".format(
-                        service.get("@id"),
-                        int(width * ratio),
-                        int(height * ratio)
-                    )
-                return "{}/full/full/0/default.jpg".format(
-                    service.get("@id"),
-                )
+            #     if width > max or height > max:
+            #         if(width > height):
+            #             ratio = max / width
+            #         else:
+            #             ratio = max / height
+
+            #         return "{}/full/{},{}/0/default.jpg".format(
+            #             service.get("@id"),
+            #             int(width * ratio),
+            #             int(height * ratio)
+            #         )
+            #     return "{}/full/full/0/default.jpg".format(
+            #         service.get("@id"),
+            #     )
 
             if service.get("type") == "ImageService3":
                 width = body.get("width")
@@ -295,6 +299,8 @@ async def main():
     url = "https://iiif.harvardartmuseums.org/manifests/object/344226"
     url = "https://resource.swissartresearch.net/manifest/zbz-990109044120205508"
     url = "https://resource.swissartresearch.net/manifest/zbz-990054267420205508"
+    url = "https://corpus-invisu.inha.fr/iiif/3/4046/manifest"
+
     async with aiohttp.ClientSession() as session:
         data = await cache.getJson(url, session, skipCache=True)
 
@@ -302,7 +308,7 @@ async def main():
 
     manifest = Manifest(url=url)
     manifest.load(data)
-    print(manifest.getMetadata())
+    print(manifest.getThumbnailUrl())
     # print(manifest)
     # for item in manifest.data.get('items', []):
     #     child = Manifest(
