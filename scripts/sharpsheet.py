@@ -22,7 +22,7 @@ class Sharpsheet:
 
         command = [
             # 'sharpsheet',
-            '/modules/sharpsheet/bin/sharpsheet',
+            '/modules/sharpsheet/bin/sharpsheet.js',
             input,
             '--outputPath', outputPath,
             '--outputFormat', format,
