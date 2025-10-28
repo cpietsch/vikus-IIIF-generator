@@ -1,0 +1,14 @@
+{
+  "name": "sharpsheet-api",
+  "version": "1.0.0",
+  "description": "HTTP API wrapper for sharpsheet",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "sharpsheet": "^0.1.5"
+  }
+}

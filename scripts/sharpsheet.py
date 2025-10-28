@@ -2,6 +2,7 @@
 import asyncio
 import logging
 import os
+import httpx
 
 from click import command
 
@@ -9,6 +10,7 @@ from click import command
 class Sharpsheet:
     def __init__(self, *args, **kwargs):
         self.logger = kwargs.get('logger', logging.getLogger('Sharpsheet'))
+        self.api_url = kwargs.get('api_url', 'http://sharpsheet:3000')
 
     async def generateFromPath(self, inputPath, *args, **kwargs):
         self.logger.debug("generate spritesheet from {}".format(inputPath))
@@ -18,36 +20,45 @@ class Sharpsheet:
         spriteSize = kwargs.get('spriteSize', '128')
         outputPath = kwargs.get('outputPath', os.path.abspath(
             os.path.join(inputPath, '../sprites/')))
-        input = inputPath + '/*.jpg'
 
-        command = [
-            # 'sharpsheet',
-            '/modules/sharpsheet/bin/sharpsheet.js',
-            input,
-            '--outputPath', outputPath,
-            '--outputFormat', format,
-            '--outputQuality', quality.__str__(),
-            '--sheetDimension', dimension.__str__(),
-            '--spriteSize', spriteSize.__str__()
-        ]
-        print(command.__str__())
+        payload = {
+            'inputPath': inputPath,
+            'outputPath': outputPath,
+            'format': format,
+            'quality': quality,
+            'dimension': dimension,
+            'spriteSize': spriteSize
+        }
 
-        proc = await asyncio.create_subprocess_exec(
-            *command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE)
+        self.logger.info(f"Sending request to sharpsheet API: {payload}")
 
-        stdout, stderr = await proc.communicate()
+        try:
+            async with httpx.AsyncClient(timeout=300.0) as client:
+                response = await client.post(
+                    f"{self.api_url}/generate",
+                    json=payload
+                )
+                response.raise_for_status()
+                result = response.json()
 
-        self.logger.info("stdout: {}".format(stdout.decode()))
+                if result.get('success'):
+                    self.logger.info("spritesheet generated")
+                    if result.get('stdout'):
+                        self.logger.info(f"stdout: {result['stdout']}")
+                    return outputPath
+                else:
+                    error_msg = result.get('error', 'Unknown error')
+                    if result.get('stderr'):
+                        self.logger.error(f"stderr: {result['stderr']}")
+                    self.logger.error(f"error generating spritesheet: {error_msg}")
+                    return False
 
-        if stderr:
-            self.logger.error(
-                "error generating spritesheet: {}".format(stderr.decode()))
+        except httpx.HTTPError as e:
+            self.logger.error(f"HTTP error generating spritesheet: {e}")
             return False
-        else:
-            self.logger.info("spritesheet generated")
-            return outputPath
+        except Exception as e:
+            self.logger.error(f"Unexpected error generating spritesheet: {e}")
+            return False
 
 
 if __name__ == '__main__':

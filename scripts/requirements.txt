@@ -8,6 +8,7 @@ rich
 aiohttp
 asyncio
 aiofiles
+httpx
 umap-learn
 pandas
 yale-dhlab-rasterfairy

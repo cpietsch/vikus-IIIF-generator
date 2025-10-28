@@ -12,6 +12,11 @@ services:
   redis:
     image: "redis:alpine"
 
+  sharpsheet:
+    build: ./services/sharpsheet
+    volumes:
+      - ./data:/data
+
   webserver:
     #image: nginx:alpine
     build: ./services/nginx
