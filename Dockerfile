@@ -1,5 +1,5 @@
 # https://hub.docker.com/_/python
-FROM python:3.12
+FROM python:3.10
 
 ENV PYTHONUNBUFFERED True
 ENV PORT 5000

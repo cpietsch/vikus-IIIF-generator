@@ -15,7 +15,6 @@ fire
 markupsafe
 fastapi
 uvicorn[standard]
-aioredis
 randomname
 spacy
 spacy_ke
