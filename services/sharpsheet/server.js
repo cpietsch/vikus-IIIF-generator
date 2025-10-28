@@ -35,7 +35,7 @@ app.post('/generate', async (req, res) => {
   const options = {
     border: 1,
     sheetDimension: parseInt(dimension),
-    sheetBackground: { r: 0, g: 0, b: 0, a: 0 },
+    sheetBackground: { r: 0, g: 0, b: 0 },
     outputFormat: format,
     outputQuality: parseInt(quality),
     spriteSize: parseInt(spriteSize)
