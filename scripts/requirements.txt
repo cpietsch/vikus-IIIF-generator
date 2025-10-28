@@ -17,6 +17,6 @@ markupsafe
 fastapi
 uvicorn[standard]
 randomname
-spacy
-spacy_ke
+keybert
+sentence-transformers
 jupyterlab

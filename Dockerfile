@@ -14,8 +14,6 @@ WORKDIR /scripts
 
 # Install production dependencies.
 RUN pip install -r requirements.txt
-#RUN spacy download en_core_web_md
-RUN spacy download en_core_web_sm
 
 RUN exec python downloadModel.py
 

@@ -1,8 +1,8 @@
 import asyncio
 import logging
 import os
-import spacy
-import spacy_ke
+from keybert import KeyBERT
+from sentence_transformers import SentenceTransformer
 import pandas as pd
 from rich.progress import track
 
@@ -11,19 +11,17 @@ class MetadataExtractor:
     def __init__(self, **kwargs):
         self.logger = kwargs.get(
             'logger', logging.getLogger('MetadataExtractor'))
-        self.nlp = None
+        self.kw_model = None
         self.cache = kwargs.get('cache', None)
         self.skipCache = kwargs.get('skipCache', False)
 
     def load(self, useGpu = False):
-        if self.nlp is None:
-            # spacy.load("en_core_web_md")
-            #if useGpu or "USEGPU" in os.environ:
-                #print("using gpu")
-                # using GPU with spacy is slower than CPU
-                #spacy.prefer_gpu()
-            self.nlp = spacy.load("en_core_web_sm")
-            self.nlp.add_pipe("yake")
+        if self.kw_model is None:
+            self.logger.info("Loading KeyBERT model...")
+            # Use a small, efficient sentence transformer model (~80MB)
+            sentence_model = SentenceTransformer('all-MiniLM-L6-v2')
+            self.kw_model = KeyBERT(model=sentence_model)
+            self.logger.info("KeyBERT model loaded successfully")
 
     async def extract(self, manifests, extract_keywords=True, runOnAllFields=True, instanceId="default"):
         self.load()
@@ -71,10 +69,23 @@ class MetadataExtractor:
             if cached is not None:
                 return cached.decode("utf-8")
 
-        doc = self.nlp(text)
-        keywords = [keyword.text for keyword,
-                    score in doc._.extract_keywords(n)]
+        # Use KeyBERT to extract keywords
+        # keyphrase_ngram_range: (1, 2) means extract single words and 2-word phrases
+        # stop_words: 'english' filters common English words
+        # top_n: number of keywords to extract
+        keywords_with_scores = self.kw_model.extract_keywords(
+            text,
+            keyphrase_ngram_range=(1, 2),
+            stop_words='english',
+            top_n=n,
+            use_maxsum=True,  # Diversify keywords
+            nr_candidates=20  # Consider top 20 candidates
+        )
+        
+        # Extract just the keyword text (not the scores)
+        keywords = [keyword for keyword, score in keywords_with_scores]
         keywordsString = ",".join(keywords)
+        
         if self.cache is not None:
             await self.cache.setKeywords(text, keywordsString)
 
